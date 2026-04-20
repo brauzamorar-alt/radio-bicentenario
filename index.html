@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Radio Escolar</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#e63946;--navy:#0a1628;--navy2:#0f2040;--panel:#111d33;--panel2:#162238;--gold:#f4b942;--green:#22c55e;--text:#e8edf5;--muted:#7a8fa6;--border:#1e3050;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow-x:hidden;}
+body{background:var(--navy);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
+#loading{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:16px;}
+#loading h2{font-family:'Oswald',sans-serif;font-size:1.5rem;color:var(--text);}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+header{background:var(--navy2);border-bottom:2px solid var(--accent);padding:12px 16px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;}
+.header-text h1{font-family:'Oswald',sans-serif;font-size:1.35rem;font-weight:700;color:#fff;line-height:1;}
+.header-text span{font-size:.72rem;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.live-badge{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(230,57,70,.15);border:1px solid var(--accent);border-radius:20px;padding:5px 12px;font-size:.75rem;font-weight:500;color:var(--accent);letter-spacing:1px;}
+.live-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.player-section{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 16px;}
+.now-playing-label{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.now-playing-title{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:500;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.5rem;}
+.progress-bar{height:4px;background:var(--border);border-radius:4px;margin-top:10px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .5s linear;}
+.section{padding:14px 16px;}
+.section-title{font-family:'Oswald',sans-serif;font-size:.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.search-wrap{position:relative;}
+.search-wrap input{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:11px 80px 11px 40px;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
+.search-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.78rem;font-weight:600;padding:6px 12px;cursor:pointer;}
+.search-wrap input:focus{border-color:var(--accent);}
+.search-wrap input::placeholder{color:var(--muted);}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);}
+#results{background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-top:6px;overflow:hidden;display:none;}
+.result-item{padding:11px 14px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;transition:background .15s;}
+.result-item:last-child{border-bottom:none;}
+.result-item:hover{background:rgba(230,57,70,.1);}
+.add-btn{margin-left:auto;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.75rem;padding:4px 10px;cursor:pointer;font-weight:500;white-space:nowrap;}
+.search-loading{padding:12px 14px;color:var(--muted);font-size:.85rem;}
+.added-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--green);color:#fff;padding:10px 20px;border-radius:20px;font-size:.85rem;font-weight:500;transition:transform .3s ease;z-index:999;pointer-events:none;}
+.added-toast.show{transform:translateX(-50%) translateY(0);}
+#queue-list{display:flex;flex-direction:column;gap:6px;}
+.queue-item{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:.88rem;}
+.queue-item.playing{border-color:var(--accent);background:rgba(230,57,70,.08);}
+.queue-num{font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--muted);min-width:20px;}
+.queue-item.playing .queue-num{color:var(--accent);}
+.bar{width:3px;background:var(--accent);border-radius:2px;animation:bars .7s infinite alternate;display:inline-block;margin:0 1px;}
+.bar:nth-child(2){animation-delay:.15s;}.bar:nth-child(3){animation-delay:.3s;}
+@keyframes bars{from{height:4px}to{height:14px}}
+.queue-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.queue-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:20px;}
+.msg-input-wrap{display:flex;gap:8px;margin-bottom:10px;}
+.msg-input-wrap input{flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;}
+.msg-input-wrap input::placeholder{color:var(--muted);}
+.send-btn{background:var(--gold);border:none;border-radius:10px;padding:10px 16px;color:var(--navy);font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap;}
+#msg-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+.msg-item{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-size:.88rem;display:flex;gap:8px;align-items:flex-start;}
+.msg-text{flex:1;line-height:1.4;}
+.msg-time{font-size:.72rem;color:var(--muted);margin-top:2px;}
+.msg-empty{color:var(--muted);font-size:.85rem;text-align:center;padding:16px;}
+footer{margin-top:auto;text-align:center;padding:10px;font-size:.7rem;color:var(--border);letter-spacing:1px;}
+#yt-player,#yt-player-b{position:absolute;top:-9999px;left:-9999px;width:1px;height:1px;}
+#error-screen{display:none;position:fixed;inset:0;background:var(--navy);align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:20px;}
+#error-screen h2{font-family:'Oswald',sans-serif;color:var(--accent);}
+#error-screen p{color:var(--muted);}
+/* Locutor banner */
+#locutor-banner{display:none;position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:var(--navy2);border:1px solid var(--gold);border-radius:20px;padding:8px 18px;font-size:.8rem;color:var(--gold);z-index:998;pointer-events:none;white-space:nowrap;}
+#locutor-banner.show{display:block;}
+</style>
+</head>
+<body>
+<div id="yt-player"></div>
+<div id="yt-player-b"></div>
+<div id="loading"><div class="spinner"></div><h2>Cargando radio...</h2></div>
+<div id="error-screen"><h2>Colegio no encontrado</h2><p>Verifica la URL e intenta nuevamente.</p></div>
+<div id="locutor-banner">🎙️ <span id="locutor-text"></span></div>
+
+<header style="display:none" id="app-header">
+  <div class="header-text">
+    <h1 id="school-name-h">Radio Escolar</h1>
+    <span id="school-city-h">-</span>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div>EN VIVO</div>
+</header>
+
+<div class="player-section" style="display:none" id="app-player">
+  <div class="now-playing-label">Reproduciendo ahora</div>
+  <div class="now-playing-title" id="np-title">Esperando canciones...</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+</div>
+
+<div id="app-content" style="display:none">
+  <div class="section">
+    <div class="section-title">Pedir cancion</div>
+    <div class="search-wrap">
+      <span class="search-icon">&#127925;</span>
+      <input type="text" id="search-input" placeholder="Busca un tema, artista..." autocomplete="off">
+      <button class="search-btn" onclick="triggerSearch()">Buscar</button>
+    </div>
+    <div id="results"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Lista de reproduccion</div>
+    <div id="queue-list"><div class="queue-empty">Sin canciones aun...</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Saludos y mensajes</div>
+    <div class="msg-input-wrap">
+      <input type="text" id="msg-input" placeholder="Feliz cumple, saludos..." maxlength="120">
+      <button class="send-btn" onclick="sendMsg()">Enviar</button>
+    </div>
+    <div id="msg-list"><div class="msg-empty">Sin mensajes aun...</div></div>
+  </div>
+  <footer id="app-footer">RADIO ESCOLAR</footer>
+</div>
+<div class="added-toast" id="toast">Cancion agregada</div>
+
+<script>
+var SB_URL = 'https://dyyftbaniffvyeqmnayh.supabase.co';
+var SB_KEY = 'sb_publishable_zeq17EOddIPy9r_8KdeLNg_ZDyTGOmU';
+var YT_API = 'AIzaSyDq6GTi3IotPnwWPuFCjxJGdxJPmVjhgnQ';
+var schoolId = '', school = null;
+var songs = [], messages = [], currentIndex = -1;
+var ytPlayer = null, ytPlayerB = null, ytReady = false, ytReadyB = false;
+var activePlayer = 'A';
+var progressInterval = null, crossfading = false, coroJumped = false;
+var jingleAudio = null;
+var CROSSFADE_SECS = 6; // segundos antes del fin para iniciar crossfade
+
+// ── Jingles integrados (cortinas generadas con Web Audio API) ──────────────
+// Se generan al vuelo, sin archivos externos
+function buildJingle(type) {
+  var ctx = new (window.AudioContext || window.webkitAudioContext)();
+  var dur = type === 'transition' ? 2.5 : 1.2;
+  var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+  var data = buf.getChannelData(0);
+  if (type === 'transition') {
+    // Barrido ascendente tipo cortina de radio
+    for (var i = 0; i < data.length; i++) {
+      var t = i / ctx.sampleRate;
+      var freq = 440 + 880 * (t / dur);
+      data[i] = Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * 1.2) * 0.18;
+    }
+  } else {
+    // Campanilla corta tipo "ding"
+    for (var i = 0; i < data.length; i++) {
+      var t = i / ctx.sampleRate;
+      data[i] = Math.sin(2 * Math.PI * 880 * t) * Math.exp(-t * 5) * 0.25;
+    }
+  }
+  return { ctx: ctx, buf: buf };
+}
+
+function playJingle(type, onEnd) {
+  try {
+    var j = buildJingle(type);
+    var src = j.ctx.createBufferSource();
+    src.buffer = j.buf;
+    src.connect(j.ctx.destination);
+    src.start(0);
+    src.onended = function() { j.ctx.close(); if (onEnd) onEnd(); };
+  } catch(e) { if (onEnd) onEnd(); }
+}
+
+// ── Locutor (Text-to-Speech nativo del navegador) ─────────────────────────
+function speakTitle(title, onEnd) {
+  if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
+  // Limpiar título: quitar paréntesis, corchetes, "official", "video", etc.
+  var clean = title
+    .replace(/\(.*?\)/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/official|video|lyrics|hd|4k|mv|ft\.|feat\./gi, '')
+    .replace(/\s+/g, ' ').trim()
+    .substring(0, 60);
+
+  var utter = new SpeechSynthesisUtterance('Ahora suena: ' + clean);
+  utter.lang = 'es-CL';
+  utter.rate = 0.95;
+  utter.pitch = 1.05;
+  utter.volume = 0.9;
+
+  // Mostrar banner en pantalla
+  var banner = document.getElementById('locutor-banner');
+  document.getElementById('locutor-text').textContent = '🎵 ' + clean;
+  banner.classList.add('show');
+  setTimeout(function() { banner.classList.remove('show'); }, 4000);
+
+  utter.onend = function() { if (onEnd) onEnd(); };
+  utter.onerror = function() { if (onEnd) onEnd(); };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+// ── Secuencia de transición completa entre canciones ─────────────────────
+// 1. Fade out canción actual  2. Jingle cortina  3. Locutor  4. Fade in siguiente
+function transitionToNext(nextIndex) {
+  if (!songs[nextIndex]) return;
+  var nextSong = songs[nextIndex];
+
+  // 1. Fade out canción actual (2 seg)
+  var pl = getActive();
+  var vol = 100, steps = 0;
+  var fadeOut = setInterval(function() {
+    steps++;
+    var v = Math.max(0, Math.round(100 * (1 - steps / 10)));
+    try { if (pl) pl.setVolume(v); } catch(e) {}
+    if (steps >= 10) {
+      clearInterval(fadeOut);
+      try { if (pl) pl.stopVideo(); } catch(e) {}
+      // 2. Jingle cortina
+      playJingle('transition', function() {
+        // 3. Locutor
+        speakTitle(nextSong.title, function() {
+          // 4. Arrancar siguiente con fade in
+          playIndex(nextIndex);
+        });
+      });
+    }
+  }, 200);
+}
+
+// ── YouTube API ───────────────────────────────────────────────────────────
+function sbFetch(path, opts) {
+  var headers = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+  if (opts && opts.prefer) headers['Prefer'] = opts.prefer;
+  return fetch(SB_URL + '/rest/v1/' + path, {
+    method: opts && opts.method ? opts.method : 'GET',
+    headers: headers,
+    body: opts && opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(function(r) { return r.json(); });
+}
+
+function getSchoolId() {
+  return new URLSearchParams(window.location.search).get('school') || '';
+}
+
+function initApp() {
+  schoolId = getSchoolId();
+  if (!schoolId) { showError(); return; }
+  sbFetch('schools?id=eq.' + schoolId + '&select=*').then(function(data) {
+    if (!Array.isArray(data) || !data[0]) { showError(); return; }
+    school = data[0];
+    applySchool();
+    loadYouTubeAPI();
+    loadAll();
+    setInterval(loadAll, 4000);
+  }).catch(showError);
+}
+
+function applySchool() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app-header').style.display = 'flex';
+  document.getElementById('app-player').style.display = 'block';
+  document.getElementById('app-content').style.display = 'block';
+  document.getElementById('school-name-h').textContent = school.name;
+  document.getElementById('school-city-h').textContent = school.city || '';
+  document.getElementById('app-footer').textContent = school.name.toUpperCase() + (school.city ? ' - ' + school.city.toUpperCase() : '');
+  document.title = 'Radio - ' + school.name;
+  if (school.color) document.documentElement.style.setProperty('--accent', school.color);
+}
+
+function showError() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'flex';
+}
+
+function loadYouTubeAPI() {
+  var s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+
+function getActive() { return activePlayer === 'A' ? ytPlayer : ytPlayerB; }
+
+window.onYouTubeIframeAPIReady = function() {
+  ytPlayer = new YT.Player('yt-player', {
+    height: '1', width: '1',
+    playerVars: { autoplay: 0, controls: 0 },
+    events: {
+      onReady: function() { ytReady = true; },
+      onStateChange: function(e) {
+        if (activePlayer !== 'A') return;
+        if (e.data === YT.PlayerState.ENDED) onSongEnd();
+        if (e.data === YT.PlayerState.PLAYING) {
+          if (!coroJumped) { coroJumped = true; ytPlayer.seekTo(60, true); }
+          startProgress();
+        }
+      }
+    }
+  });
+  ytPlayerB = new YT.Player('yt-player-b', {
+    height: '1', width: '1',
+    playerVars: { autoplay: 0, controls: 0 },
+    events: {
+      onReady: function() { ytReadyB = true; },
+      onStateChange: function(e) {
+        if (activePlayer !== 'B') return;
+        if (e.data === YT.PlayerState.ENDED) onSongEnd();
+        if (e.data === YT.PlayerState.PLAYING) {
+          if (!coroJumped) { coroJumped = true; ytPlayerB.seekTo(60, true); }
+          startProgress();
+        }
+      }
+    }
+  });
+};
+
+function startProgress() {
+  clearInterval(progressInterval);
+  progressInterval = setInterval(function() {
+    var pl = getActive();
+    if (!pl || !pl.getDuration) return;
+    try {
+      var dur = pl.getDuration(), cur = pl.getCurrentTime();
+      if (dur > 0) {
+        document.getElementById('progress-fill').style.width = (cur / dur * 100) + '%';
+        // Iniciar transición cuando faltan CROSSFADE_SECS segundos
+        if (dur - cur < CROSSFADE_SECS && !crossfading && currentIndex < songs.length - 1) {
+          crossfading = true;
+          clearInterval(progressInterval);
+          transitionToNext(currentIndex + 1);
+        }
+      }
+    } catch(e) {}
+  }, 500);
+}
+
+function onSongEnd() {
+  clearInterval(progressInterval);
+  document.getElementById('progress-fill').style.width = '0%';
+  if (!crossfading) {
+    if (currentIndex < songs.length - 1) {
+      transitionToNext(currentIndex + 1);
+    } else {
+      document.getElementById('np-title').textContent = 'Sin mas canciones';
+      currentIndex = -1; renderQueue();
+    }
+  }
+}
+
+function playIndex(i) {
+  if (!songs[i]) return;
+  coroJumped = false;
+  crossfading = false;
+  currentIndex = i;
+  var song = songs[i];
+  document.getElementById('np-title').textContent = song.title;
+  // Alternar entre player A y B para el siguiente crossfade (opcional, aquí usamos siempre A para el oyente)
+  activePlayer = 'A';
+  if (ytReady && ytPlayer) {
+    ytPlayer.setVolume(0);
+    ytPlayer.loadVideoById({ videoId: song.videoId });
+    // Fade in gradual
+    var steps = 0;
+    var fadeIn = setInterval(function() {
+      steps++;
+      var v = Math.min(100, Math.round(100 * steps / 10));
+      try { ytPlayer.setVolume(v); } catch(e) {}
+      if (steps >= 10) clearInterval(fadeIn);
+    }, 150);
+  }
+  renderQueue();
+  sbFetch('state?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: [{ id: 1, current_index: i, current_title: song.title, school_id: schoolId }] }).catch(function() {});
+}
+
+// ── Búsqueda ──────────────────────────────────────────────────────────────
+function triggerSearch() {
+  var q = document.getElementById('search-input').value.trim();
+  var res = document.getElementById('results');
+  if (q.length < 2) { res.style.display = 'none'; res.innerHTML = ''; return; }
+  res.style.display = 'block';
+  res.innerHTML = '<div class="search-loading">Buscando...</div>';
+  doSearch(q);
+}
+document.getElementById('search-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') triggerSearch(); });
+document.getElementById('search-input').addEventListener('input', function() {
+  if (this.value.trim().length < 2) { var r = document.getElementById('results'); r.style.display = 'none'; r.innerHTML = ''; }
+});
+
+function doSearch(q) {
+  var res = document.getElementById('results');
+  var url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=' + encodeURIComponent(q) + '&key=' + YT_API;
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data.items || !data.items.length) { res.innerHTML = '<div class="search-loading">Sin resultados</div>'; return; }
+    var html = '';
+    for (var i = 0; i < data.items.length; i++) {
+      var item = data.items[i];
+      var title = item.snippet.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      var videoId = item.id.videoId;
+      var thumb = item.snippet.thumbnails.default.url;
+      var channel = item.snippet.channelTitle;
+      html += '<div class="result-item" onclick="addSong(\'' + videoId + '\',\'' + title + '\')">';
+      html += '<img src="' + thumb + '" style="width:40px;height:30px;object-fit:cover;border-radius:4px;flex-shrink:0;">';
+      html += '<div style="flex:1;overflow:hidden"><div style="font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + item.snippet.title + '</div>';
+      html += '<div style="font-size:.72rem;color:var(--muted)">' + channel + '</div></div>';
+      html += '<button class="add-btn">+ Agregar</button></div>';
+    }
+    res.innerHTML = html;
+  }).catch(function() { res.innerHTML = '<div class="search-loading">Error al buscar</div>'; });
+}
+
+function addSong(videoId, title) {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('search-input').value = '';
+  sbFetch('songs', { method: 'POST', prefer: 'return=representation', body: [{ title: title, videoId: videoId, school_id: schoolId }] })
+    .then(function(res) { if (Array.isArray(res) && res[0]) { showToast(); loadAll(); } }).catch(function() {});
+}
+
+function showToast() {
+  var t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+function sendMsg() {
+  var inp = document.getElementById('msg-input'), text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  sbFetch('messages', { method: 'POST', prefer: 'return=representation', body: [{ text: text, school_id: schoolId }] })
+    .then(function() { loadAll(); }).catch(function() {});
+}
+document.getElementById('msg-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMsg(); });
+
+function renderQueue() {
+  var el = document.getElementById('queue-list');
+  if (!songs.length) { el.innerHTML = '<div class="queue-empty">Sin canciones en la cola</div>'; return; }
+  var html = '';
+  for (var i = 0; i < songs.length; i++) {
+    var playing = (currentIndex >= 0 && i === currentIndex);
+    html += '<div class="queue-item' + (playing ? ' playing' : '') + '">';
+    html += '<div class="queue-num">';
+    if (playing) html += '<span class="bar"></span><span class="bar"></span><span class="bar"></span>';
+    else html += (i + 1);
+    html += '</div><div class="queue-title">' + songs[i].title + '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderMessages() {
+  var el = document.getElementById('msg-list');
+  if (!messages.length) { el.innerHTML = '<div class="msg-empty">Se el primero en dejar un saludo</div>'; return; }
+  var html = '';
+  var msgs = messages.slice().reverse();
+  for (var i = 0; i < msgs.length; i++) {
+    var m = msgs[i];
+    var time = m.created_at ? new Date(m.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
+    html += '<div class="msg-item"><span>&#128172;</span><div><div class="msg-text">' + m.text + '</div><div class="msg-time">' + time + '</div></div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function loadAll() {
+  Promise.all([
+    sbFetch('songs?select=*&order=created_at&school_id=eq.' + schoolId).catch(function(){return [];}),
+    sbFetch('state?select=*&school_id=eq.' + schoolId).catch(function(){return [];})
+  ]).then(function(results) {
+    var s = results[0], st = results[1];
+    if (Array.isArray(s)) {
+      songs = s;
+      if (Array.isArray(st) && st[0] && st[0].current_index !== null) {
+        var serverIdx = st[0].current_index;
+        if (serverIdx !== currentIndex) {
+          currentIndex = serverIdx;
+          if (songs[currentIndex]) document.getElementById('np-title').textContent = songs[currentIndex].title;
+          if (ytReady && ytPlayer && songs[currentIndex]) playIndex(currentIndex);
+        }
+      } else if (songs.length && currentIndex === -1 && ytReady) {
+        playIndex(0);
+      }
+      renderQueue();
+    }
+  });
+  sbFetch('messages?select=*&order=created_at&school_id=eq.' + schoolId).then(function(m) {
+    if (Array.isArray(m)) { messages = m; renderMessages(); }
+  }).catch(function() {});
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-wrap') && !e.target.closest('#results')) document.getElementById('results').style.display = 'none';
+});
+
+initApp();
+</script>
+</body>
+</html>
