@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DJ Panel — Karaoke Night</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0c0e; --surface:#141416; --surface2:#1c1c1f;
+  --border:rgba(255,255,255,0.07); --gold:#d4a853; --gold2:#f0c96a;
+  --text:#f0ede8; --muted:#6b6860; --green:#4ade80; --red:#f87171;
+  --pending:#f59e0b; --accepted:#4ade80; --rejected:#6b6860;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden;}
+
+/* Login */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:8px;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 32px;width:340px;text-align:center;}
+.login-box h2{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--gold);margin-bottom:4px;}
+.login-box p{font-size:.8rem;color:var(--muted);margin-bottom:24px;}
+.login-box input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;margin-bottom:10px;}
+.login-box input:focus{border-color:rgba(212,168,83,0.4);}
+.login-btn{width:100%;background:var(--gold);border:none;border-radius:10px;padding:14px;color:#0c0c0e;font-weight:600;font-size:.95rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.login-btn:hover{background:var(--gold2);}
+.login-err{color:var(--red);font-size:.8rem;margin-top:8px;display:none;}
+
+/* Layout: izquierda karaoke, derecha panel */
+#main{display:none;height:100vh;display:grid;grid-template-columns:1fr 380px;}
+
+/* Player lado izquierdo */
+#player-side{position:relative;background:#000;overflow:hidden;}
+#yt-frame{width:100%;height:100%;border:none;}
+#player-overlay{
+  position:absolute;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+.overlay-logo{font-family:'DM Serif Display',serif;font-size:3rem;color:var(--gold);opacity:.3;}
+.overlay-sub{font-size:.8rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+#player-np{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,0.85));
+  padding:32px 24px 20px;
+}
+#player-np-title{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--white);margin-bottom:4px;}
+#player-np-status{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+
+/* Panel lado derecho */
+#panel-side{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.panel-title{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--gold);}
+.pub-badge{font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab{flex:1;padding:12px 0;text-align:center;font-size:.78rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-badge{display:inline-block;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+
+/* Tab content */
+.tab-content{flex:1;overflow-y:auto;padding:12px;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* Queue items */
+.q-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.q-item.playing{border-color:rgba(212,168,83,0.4);background:rgba(212,168,83,0.04);}
+.q-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.q-num{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--muted);min-width:20px;padding-top:2px;}
+.q-num.playing{color:var(--gold);}
+.q-info{flex:1;overflow:hidden;}
+.q-title{font-size:.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.q-time{font-size:.7rem;color:var(--muted);}
+.q-status{font-size:.65rem;letter-spacing:1px;text-transform:uppercase;border-radius:6px;padding:2px 7px;font-weight:600;}
+.q-status.pending{background:rgba(245,158,11,0.15);color:var(--pending);}
+.q-status.playing{background:rgba(212,168,83,0.15);color:var(--gold);}
+.q-status.done{background:rgba(107,104,96,0.2);color:var(--muted);}
+.q-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.q-btn{border:none;border-radius:8px;padding:7px 12px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.q-btn:active{transform:scale(.96);}
+.btn-play{background:var(--gold);color:#0c0c0e;}
+.btn-play:hover{background:var(--gold2);}
+.btn-done{background:rgba(107,104,96,0.3);color:var(--muted);}
+.btn-done:hover{background:rgba(107,104,96,0.5);color:var(--text);}
+.btn-del{background:rgba(248,113,113,0.15);color:var(--red);}
+.btn-del:hover{background:rgba(248,113,113,0.25);}
+.q-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:32px 0;}
+
+/* Pending requests */
+.req-item{background:var(--surface2);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.req-title{font-size:.88rem;font-weight:500;margin-bottom:8px;line-height:1.3;}
+.req-actions{display:flex;gap:6px;}
+.btn-accept{background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;flex:1;}
+.btn-accept:hover{background:rgba(74,222,128,0.25);}
+.btn-reject{background:rgba(107,104,96,0.2);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-reject:hover{background:rgba(107,104,96,0.35);}
+
+/* Messages */
+.msg-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;}
+.msg-text{flex:1;font-size:.85rem;line-height:1.4;}
+.msg-time{font-size:.68rem;color:var(--muted);white-space:nowrap;padding-top:2px;}
+.msg-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:2px 6px;border-radius:4px;}
+.msg-del:hover{color:var(--red);}
+.msg-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;}
+.del-all{width:100%;background:transparent;border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:8px;color:var(--red);font-size:.78rem;cursor:pointer;margin-bottom:10px;font-family:'DM Sans',sans-serif;}
+.del-all:hover{background:rgba(248,113,113,0.08);}
+</style>
+</head>
+<body>
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <h2>DJ Panel</h2>
+    <p>Karaoke Night — Control</p>
+    <input type="text" id="pub-id-input" placeholder="ID del pub (ej: mipub)">
+    <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err">ID o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main" style="display:none">
+  <!-- Karaoke player -->
+  <div id="player-side">
+    <div id="player-overlay">
+      <div class="overlay-logo">🎤</div>
+      <div class="overlay-sub">karaoke night</div>
+    </div>
+    <iframe id="yt-frame" allow="autoplay; encrypted-media" allowfullscreen style="display:none"></iframe>
+    <div id="player-np" style="display:none">
+      <div id="player-np-title">—</div>
+      <div id="player-np-status">EN PANTALLA</div>
+    </div>
+  </div>
+
+  <!-- DJ Panel -->
+  <div id="panel-side">
+    <div class="panel-header">
+      <div class="panel-title">DJ Panel</div>
+      <div class="pub-badge" id="pub-badge">—</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('queue')">Cola <span class="tab-badge" id="queue-badge" style="display:none">0</span></div>
+      <div class="tab" onclick="switchTab('requests')">Pedidos <span class="tab-badge" id="req-badge" style="display:none">0</span></div>
+      <div class="tab" onclick="switchTab('messages')">Mensajes</div>
+    </div>
+    <div class="tab-content">
+      <div class="tab-pane active" id="tab-queue">
+        <div id="queue-list"><div class="q-empty">Cola vacía</div></div>
+      </div>
+      <div class="tab-pane" id="tab-requests">
+        <div id="req-list"><div class="q-empty">Sin pedidos pendientes</div></div>
+      </div>
+      <div class="tab-pane" id="tab-messages">
+        <button class="del-all" onclick="deleteAllMsgs()">Borrar todos los mensajes</button>
+        <div id="msg-list"><div class="msg-empty">Sin mensajes</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+var SB_URL='https://dyyftbaniffvyeqmnayh.supabase.co';
+var SB_KEY='sb_publishable_zeq17EOddIPy9r_8KdeLNg_ZDyTGOmU';
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var pubId='', currentlyPlaying=null;
+
+function sbFetch(path,opts){
+  var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(opts&&opts.prefer)h['Prefer']=opts.prefer;
+  return fetch(SB_URL+'/rest/v1/'+path,{method:opts&&opts.method?opts.method:'GET',headers:h,body:opts&&opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.json();});
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+function doLogin(){
+  var pid=document.getElementById('pub-id-input').value.trim().toLowerCase();
+  var pwd=document.getElementById('pwd-input').value;
+  if(!pid){document.getElementById('login-err').style.display='block';return;}
+  sbFetch('karaoke_pubs?id=eq.'+pid+'&select=*').then(function(data){
+    if(!Array.isArray(data)||!data[0]){showLoginErr();return;}
+    if(data[0].admin_password!==pwd){showLoginErr();return;}
+    pubId=pid;
+    sessionStorage.setItem('kpub',pid);sessionStorage.setItem('kpwd_ok','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main').style.display='grid';
+    document.getElementById('pub-badge').textContent=data[0].name||pid;
+    initDJ();
+  }).catch(showLoginErr);
+}
+function showLoginErr(){var e=document.getElementById('login-err');e.style.display='block';setTimeout(function(){e.style.display='none';},3000);document.getElementById('pwd-input').value='';}
+
+// Auto-login
+(function(){
+  var sp=sessionStorage.getItem('kpub'),so=sessionStorage.getItem('kpwd_ok');
+  if(so==='1'&&sp){
+    pubId=sp;
+    sbFetch('karaoke_pubs?id=eq.'+pubId+'&select=*').then(function(data){
+      if(Array.isArray(data)&&data[0]){
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('main').style.display='grid';
+        document.getElementById('pub-badge').textContent=data[0].name||pubId;
+        initDJ();
+      }
+    }).catch(function(){});
+  }
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',['queue','requests','messages'][i]===name);});
+  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='requests'){document.getElementById('req-badge').style.display='none';}
+}
+
+// ── Player ────────────────────────────────────────────────────────────────
+function playItem(item){
+  currentlyPlaying=item;
+  var frame=document.getElementById('yt-frame');
+  var overlay=document.getElementById('player-overlay');
+  var npBar=document.getElementById('player-np');
+  frame.src='https://www.youtube.com/embed/'+item.video_id+'?autoplay=1&controls=1&rel=0';
+  frame.style.display='block';
+  overlay.style.display='none';
+  npBar.style.display='block';
+  document.getElementById('player-np-title').textContent=item.title;
+  // Actualizar estado
+  sbFetch('karaoke_state?on_conflict=pub_id',{method:'POST',prefer:'resolution=merge-duplicates',body:[{pub_id:pubId,now_playing:item.title,now_playing_id:item.id}]}).catch(function(){});
+  // Mover a cola con estado playing
+  sbFetch('karaoke_requests?id=eq.'+item.id,{method:'PATCH',body:{status:'playing'}}).catch(function(){});
+  // Actualizar top
+  updateTop(item);
+  loadAll();
+}
+
+function markDone(id){
+  sbFetch('karaoke_requests?id=eq.'+id,{method:'PATCH',body:{status:'done'}}).then(function(){loadAll();}).catch(function(){});
+  if(currentlyPlaying&&currentlyPlaying.id===id){
+    document.getElementById('yt-frame').src='';
+    document.getElementById('yt-frame').style.display='none';
+    document.getElementById('player-overlay').style.display='flex';
+    document.getElementById('player-np').style.display='none';
+    sbFetch('karaoke_state?pub_id=eq.'+pubId,{method:'PATCH',body:{now_playing:null}}).catch(function(){});
+    currentlyPlaying=null;
+  }
+}
+
+function updateTop(item){
+  sbFetch('karaoke_top?pub_id=eq.'+pubId+'&video_id=eq.'+encodeURIComponent(item.video_id)).then(function(data){
+    if(Array.isArray(data)&&data[0]){
+      sbFetch('karaoke_top?id=eq.'+data[0].id,{method:'PATCH',body:{request_count:data[0].request_count+1}}).catch(function(){});
+    } else {
+      sbFetch('karaoke_top',{method:'POST',body:[{pub_id:pubId,video_id:item.video_id,title:item.title,request_count:1}]}).catch(function(){});
+    }
+  }).catch(function(){});
+}
+
+// ── Accept/Reject requests ────────────────────────────────────────────────
+function acceptRequest(id){
+  sbFetch('karaoke_requests?id=eq.'+id,{method:'PATCH',body:{status:'queued'}}).then(function(){loadAll();}).catch(function(){});
+}
+function rejectRequest(id){
+  sbFetch('karaoke_requests?id=eq.'+id,{method:'DELETE'}).then(function(){loadAll();}).catch(function(){});
+}
+function deleteRequest(id){
+  if(!confirm('¿Eliminar esta canción?'))return;
+  sbFetch('karaoke_requests?id=eq.'+id,{method:'DELETE'}).then(function(){loadAll();}).catch(function(){});
+}
+function deleteAllMsgs(){
+  if(!confirm('¿Borrar todos los mensajes?'))return;
+  sbFetch('karaoke_messages?pub_id=eq.'+pubId,{method:'DELETE'}).then(function(){loadAll();}).catch(function(){});
+}
+function deleteMsg(id){sbFetch('karaoke_messages?id=eq.'+id,{method:'DELETE'}).then(function(){loadAll();}).catch(function(){});}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function renderQueue(items){
+  var el=document.getElementById('queue-list');
+  var queued=items.filter(function(i){return i.status==='queued'||i.status==='playing';});
+  if(!queued.length){el.innerHTML='<div class="q-empty">Cola vacía</div>';document.getElementById('queue-badge').style.display='none';return;}
+  document.getElementById('queue-badge').textContent=queued.length;
+  document.getElementById('queue-badge').style.display='inline-block';
+  var html='';
+  queued.forEach(function(item,i){
+    var isPlaying=item.status==='playing';
+    html+='<div class="q-item'+(isPlaying?' playing':'')+'">';
+    html+='<div class="q-top"><div class="q-num'+(isPlaying?' playing':'')+'">'+( isPlaying?'🎤':i+1)+'</div>';
+    html+='<div class="q-info"><div class="q-title">'+item.title+'</div>';
+    var time=item.created_at?new Date(item.created_at).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}):'';
+    html+='<div class="q-time">Pedido a las '+time+'</div></div>';
+    html+='<span class="q-status '+(isPlaying?'playing':'pending')+'">'+(isPlaying?'EN PANTALLA':'EN COLA')+'</span></div>';
+    html+='<div class="q-actions">';
+    if(!isPlaying) html+='<button class="q-btn btn-play" onclick="playItem('+JSON.stringify(item).replace(/"/g,'&quot;')+')">▶ Proyectar</button>';
+    html+='<button class="q-btn btn-done" onclick="markDone(\''+item.id+'\')">✓ Hecho</button>';
+    html+='<button class="q-btn btn-del" onclick="deleteRequest(\''+item.id+'\')">×</button>';
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function renderRequests(items){
+  var el=document.getElementById('req-list');
+  var pending=items.filter(function(i){return i.status==='pending';});
+  if(!pending.length){el.innerHTML='<div class="q-empty">Sin pedidos pendientes</div>';document.getElementById('req-badge').style.display='none';return;}
+  document.getElementById('req-badge').textContent=pending.length;
+  document.getElementById('req-badge').style.display='inline-block';
+  var html='';
+  pending.forEach(function(item){
+    html+='<div class="req-item"><div class="req-title">'+item.title+'</div>';
+    html+='<div class="req-actions">';
+    html+='<button class="btn-accept" onclick="acceptRequest(\''+item.id+'\')">✓ Aceptar</button>';
+    html+='<button class="btn-reject" onclick="rejectRequest(\''+item.id+'\')">× Rechazar</button>';
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function renderMessages(msgs){
+  var el=document.getElementById('msg-list');
+  if(!msgs.length){el.innerHTML='<div class="msg-empty">Sin mensajes</div>';return;}
+  var html='';
+  msgs.slice().reverse().forEach(function(m){
+    var time=m.created_at?new Date(m.created_at).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}):'';
+    html+='<div class="msg-item"><div class="msg-text">'+m.text+'</div><div class="msg-time">'+time+'</div><button class="msg-del" onclick="deleteMsg(\''+m.id+'\')">×</button></div>';
+  });
+  el.innerHTML=html;
+}
+
+function loadAll(){
+  sbFetch('karaoke_requests?pub_id=eq.'+pubId+'&order=created_at&select=*').then(function(data){
+    if(Array.isArray(data)){renderQueue(data);renderRequests(data);}
+  }).catch(function(){});
+  sbFetch('karaoke_messages?pub_id=eq.'+pubId+'&order=created_at&select=*').then(function(data){
+    if(Array.isArray(data))renderMessages(data);
+  }).catch(function(){});
+}
+
+function initDJ(){
+  loadAll();
+  sb.channel('dj-'+pubId)
+    .on('postgres_changes',{event:'*',schema:'public',table:'karaoke_requests',filter:'pub_id=eq.'+pubId},function(){loadAll();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'karaoke_messages',filter:'pub_id=eq.'+pubId},function(){loadAll();})
+    .subscribe();
+  setInterval(loadAll,5000);
+}
+</script>
+</body>
+</html>
