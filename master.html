@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Panel — Karaoke Night</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0c0e; --surface:#141416; --surface2:#1c1c1f;
+  --border:rgba(255,255,255,0.07); --gold:#d4a853; --gold2:#f0c96a;
+  --text:#f0ede8; --muted:#6b6860; --green:#4ade80; --red:#f87171;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;}
+
+/* Login */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:44px 36px;width:360px;text-align:center;position:relative;z-index:1;}
+.login-logo{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--gold);margin-bottom:4px;}
+.login-sub{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:28px;}
+.login-box input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;margin-bottom:10px;}
+.login-box input:focus{border-color:rgba(212,168,83,0.4);}
+.login-btn{width:100%;background:var(--gold);border:none;border-radius:10px;padding:14px;color:#0c0c0e;font-weight:600;font-size:.95rem;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.5px;}
+.login-btn:hover{background:var(--gold2);}
+.login-err{color:var(--red);font-size:.8rem;margin-top:10px;display:none;}
+
+/* App */
+#app{display:none;min-height:100vh;position:relative;z-index:1;}
+
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;gap:16px;height:60px;position:sticky;top:0;z-index:50;}
+.header-logo{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--gold);}
+.header-logo span{font-style:italic;opacity:.5;font-size:.85rem;margin-left:6px;}
+.master-badge{background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.2);border-radius:20px;padding:4px 12px;font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);}
+.logout-btn{margin-left:auto;background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--muted);font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* Content */
+.content{max-width:900px;margin:0 auto;padding:32px 24px;}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.stat-num{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--gold);line-height:1;}
+.stat-label{font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+
+/* Section title */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.section-title{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--text);}
+.create-btn{background:var(--gold);border:none;border-radius:10px;padding:10px 20px;color:#0c0c0e;font-weight:600;font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+.create-btn:hover{background:var(--gold2);}
+
+/* Pub cards */
+#pubs-grid{display:flex;flex-direction:column;gap:10px;}
+.pub-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:border-color .2s;}
+.pub-card:hover{border-color:rgba(212,168,83,0.2);}
+.pub-icon{width:44px;height:44px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.pub-info{flex:1;overflow:hidden;}
+.pub-name{font-size:.95rem;font-weight:500;margin-bottom:3px;}
+.pub-id{font-size:.72rem;color:var(--muted);font-family:monospace;}
+.pub-meta{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+.pub-tag{font-size:.68rem;letter-spacing:1px;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--muted);}
+.pub-tag.active{background:rgba(74,222,128,0.08);border-color:rgba(74,222,128,0.2);color:var(--green);}
+.pub-actions{display:flex;gap:6px;flex-shrink:0;}
+.act-btn{border:none;border-radius:8px;padding:8px 14px;font-size:.78rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-edit{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+.btn-edit:hover{border-color:rgba(212,168,83,0.4);color:var(--gold);}
+.btn-link{background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.2);color:var(--gold);}
+.btn-link:hover{background:rgba(212,168,83,0.2);}
+.btn-delete{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.15);color:var(--red);}
+.btn-delete:hover{background:rgba(248,113,113,0.18);}
+.pubs-empty{text-align:center;color:var(--muted);padding:40px;font-size:.9rem;}
+
+/* Modal */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+#modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:460px;overflow:hidden;}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+.modal-close{background:transparent;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:24px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
+.field input:focus{border-color:rgba(212,168,83,0.4);}
+.field input:disabled{opacity:.4;cursor:not-allowed;}
+.field .hint{font-size:.72rem;color:var(--muted);margin-top:5px;}
+.modal-footer{padding:0 24px 24px;display:flex;gap:8px;}
+.modal-save{flex:1;background:var(--gold);border:none;border-radius:10px;padding:13px;color:#0c0c0e;font-weight:600;font-size:.9rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.modal-save:hover{background:var(--gold2);}
+.modal-cancel{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 20px;color:var(--muted);font-size:.9rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.modal-cancel:hover{color:var(--text);}
+
+/* Links modal */
+.links-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+.links-label{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.link-row{display:flex;align-items:center;gap:8px;}
+.link-url{flex:1;font-size:.78rem;color:var(--gold);font-family:monospace;word-break:break-all;line-height:1.4;}
+.copy-btn{background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.2);border-radius:7px;padding:6px 10px;color:var(--gold);font-size:.72rem;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+.copy-btn:active{background:rgba(212,168,83,0.25);}
+
+/* Toast */
+
+/* QR Modal */
+.qr-modal-body { padding:24px; text-align:center; }
+#qr-preview-wrap {
+  background: #fff;
+  border-radius:16px;
+  padding: 28px;
+  display:inline-block;
+  margin: 0 auto 20px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+}
+.qr-pub-name {
+  font-family:'DM Serif Display',serif;
+  font-size:1.4rem;
+  color:#0c0c0e;
+  margin-bottom:6px;
+  text-align:center;
+}
+.qr-instruction {
+  font-size:.72rem;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:#6b6860;
+  text-align:center;
+}
+.qr-app-name {
+  font-family:'DM Serif Display',serif;
+  font-size:1rem;
+  color:#d4a853;
+  margin-top:10px;
+  text-align:center;
+}
+#qr-canvas-container { margin:12px auto; }
+.download-btn {
+  width:100%;background:var(--gold);border:none;border-radius:10px;
+  padding:14px;color:#0c0c0e;font-weight:600;font-size:.9rem;
+  cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;
+}
+.download-btn:hover{background:var(--gold2);}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid rgba(212,168,83,0.3);border-radius:12px;padding:12px 20px;font-size:.85rem;color:var(--gold);transform:translateY(80px);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none;}
+.toast.show{transform:translateY(0);}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+// ── QR Generator ──────────────────────────────────────────────────────────
+var currentQrPub = null;
+function openQrModal(pubId, pubName) {
+  currentQrPub = {id: pubId, name: pubName};
+  document.getElementById('qr-pub-name-display').textContent = pubName;
+  var container = document.getElementById('qr-canvas-container');
+  container.innerHTML = '';
+  var url = BASE_URL + 'karaoke.html?pub=' + pubId;
+  new QRCode(container, {
+    text: url,
+    width: 200,
+    height: 200,
+    colorDark: '#0c0c0e',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  document.getElementById('qr-modal-overlay').style.display = 'flex';
+}
+
+function closeQrModal() {
+  document.getElementById('qr-modal-overlay').style.display = 'none';
+}
+
+function downloadQR() {
+  var wrap = document.getElementById('qr-preview-wrap');
+  // Use html2canvas-like approach with canvas
+  var qrImg = wrap.querySelector('img') || wrap.querySelector('canvas');
+  if (!qrImg) { showToast('⚠️ Error al generar imagen'); return; }
+
+  var canvas = document.createElement('canvas');
+  var W = 500, H = 580;
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Rounded rect helper
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+  }
+
+  // Gold top bar
+  ctx.fillStyle = '#d4a853';
+  roundRect(0,0,W,80,0);
+  ctx.fill();
+
+  // App name
+  ctx.fillStyle = '#0c0c0e';
+  ctx.font = 'bold 32px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('KARA - TOTEM', W/2, 52);
+
+  // Pub name
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = '500 24px sans-serif';
+  ctx.fillText(currentQrPub.name, W/2, 130);
+
+  // Draw QR
+  var src = qrImg.tagName === 'CANVAS' ? qrImg.toDataURL() : qrImg.src;
+  var img = new Image();
+  img.onload = function() {
+    var qrSize = 240;
+    var qrX = (W - qrSize) / 2;
+    var qrY = 155;
+
+    // QR border
+    ctx.fillStyle = '#f5f5f5';
+    roundRect(qrX-16, qrY-16, qrSize+32, qrSize+32, 16);
+    ctx.fill();
+    ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+    // Instruction text
+    ctx.fillStyle = '#555555';
+    ctx.font = '15px sans-serif';
+    ctx.fillText('Escanea el código QR para pedir', W/2, qrY + qrSize + 60);
+    ctx.fillText('tu karaoke desde tu celular 🎤', W/2, qrY + qrSize + 82);
+
+    // Bottom gold line
+    ctx.fillStyle = '#d4a853';
+    ctx.fillRect(0, H-8, W, 8);
+
+    // Download
+    var a = document.createElement('a');
+    a.download = 'qr-karaoke-' + currentQrPub.id + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✓ Imagen descargada');
+  };
+  img.src = src;
+}
+
+document.getElementById('qr-modal-overlay').addEventListener('click', function(e){if(e.target===this)closeQrModal();});
+
+
+// ── Classics Manager ──────────────────────────────────────────────────────
+var editingClassicId = null;
+
+function loadClassics(){
+  sbFetch('karaoke_classics?select=*&order=sort_order').then(function(data){
+    var el = document.getElementById('classics-grid');
+    if(!Array.isArray(data)||!data.length){
+      el.innerHTML='<div class="pubs-empty">No hay temas aún. Agrega el primero.</div>';
+      return;
+    }
+    var html='';
+    data.forEach(function(c){
+      var thumb='https://img.youtube.com/vi/'+c.video_id+'/mqdefault.jpg';
+      html+='<div class="pub-card" style="gap:12px;">';
+      html+='<img src="'+thumb+'" style="width:64px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display=&quot;none&quot;">';
+      html+='<div class="pub-info">';
+      html+='<div class="pub-name">'+(c.emoji||'🎵')+' '+c.title+'</div>';
+      html+='<div class="pub-id">'+c.artist+' · ID: '+c.video_id+'</div>';
+      html+='</div>';
+      html+='<div class="pub-actions">';
+      html+='<button class="act-btn btn-edit" data-classic="'+JSON.stringify(c).replace(/"/g,"&quot;")+'" onclick="openEditClassic(JSON.parse(this.dataset.classic))">✏️ Editar</button>';
+      html+='<button class="act-btn btn-delete" data-cid="'+c.id+'" data-ctitle="'+c.title.replace(/"/g,"&quot;")+'" onclick="deleteClassic(this.dataset.cid,this.dataset.ctitle)">×</button>';
+      html+='</div></div>';
+    });
+    el.innerHTML=html;
+  }).catch(function(){ document.getElementById('classics-grid').innerHTML='<div class="pubs-empty">Error al cargar</div>'; });
+}
+
+function openClassicModal(){
+  editingClassicId=null;
+  document.getElementById('classic-modal-title').textContent='Agregar tema';
+  document.getElementById('classic-save-btn').textContent='Agregar';
+  document.getElementById('cf-title').value='';
+  document.getElementById('cf-artist').value='';
+  document.getElementById('cf-vid').value='';
+  document.getElementById('cf-emoji').value='';
+  document.getElementById('cf-preview').style.display='none';
+  document.getElementById('classic-modal-overlay').style.display='flex';
+}
+
+function openEditClassic(c){
+  editingClassicId=c.id;
+  document.getElementById('classic-modal-title').textContent='Editar tema';
+  document.getElementById('classic-save-btn').textContent='Guardar';
+  document.getElementById('cf-title').value=c.title||'';
+  document.getElementById('cf-artist').value=c.artist||'';
+  document.getElementById('cf-vid').value=c.video_id||'';
+  document.getElementById('cf-emoji').value=c.emoji||'';
+  previewYT();
+  document.getElementById('classic-modal-overlay').style.display='flex';
+}
+
+function closeClassicModal(){ document.getElementById('classic-modal-overlay').style.display='none'; }
+
+function extractYTId(input){
+  input = input.trim();
+  // Full URL with v= param: youtube.com/watch?v=ID&list=...
+  var m = input.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if(m) return m[1];
+  // Short URL: youtu.be/ID
+  m = input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if(m) return m[1];
+  // Embed URL: youtube.com/embed/ID
+  m = input.match(/embed\/([a-zA-Z0-9_-]{11})/);
+  if(m) return m[1];
+  // Already just the ID (11 chars)
+  m = input.match(/^([a-zA-Z0-9_-]{11})$/);
+  if(m) return m[1];
+  // ID at start before & (like i6CBH_jDkD8&list=...)
+  m = input.match(/^([a-zA-Z0-9_-]{11})&/);
+  if(m) return m[1];
+  return input; // return as-is if nothing matched
+}
+
+function previewYT(){
+  var raw=document.getElementById('cf-vid').value.trim();
+  if(!raw)return;
+  var vid=extractYTId(raw);
+  document.getElementById('cf-vid').value=vid;
+  var img=document.getElementById('cf-preview-img');
+  img.src='https://img.youtube.com/vi/'+vid+'/mqdefault.jpg';
+  img.style.display='block';
+  document.getElementById('cf-preview').style.display='block';
+}
+
+function saveClassic(){
+  var title=document.getElementById('cf-title').value.trim();
+  var artist=document.getElementById('cf-artist').value.trim();
+  var vid=extractYTId(document.getElementById('cf-vid').value.trim());
+  document.getElementById('cf-vid').value=vid;
+  var emoji=document.getElementById('cf-emoji').value.trim()||'🎵';
+  if(!title||!artist||!vid){showToast('⚠️ Título, artista e ID son obligatorios');return;}
+  var btn=document.getElementById('classic-save-btn');
+  btn.disabled=true;btn.textContent='Guardando...';
+
+  if(editingClassicId){
+    sbFetch('karaoke_classics?id=eq.'+editingClassicId,{method:'PATCH',prefer:'return=representation',
+      body:{title:title,artist:artist,video_id:vid,emoji:emoji}})
+      .then(function(){closeClassicModal();showToast('✓ Tema actualizado');loadClassics();})
+      .catch(function(){showToast('Error al guardar');})
+      .finally(function(){btn.disabled=false;btn.textContent='Guardar';});
+  } else {
+    sbFetch('karaoke_classics',{method:'POST',prefer:'return=representation',
+      body:[{title:title,artist:artist,video_id:vid,emoji:emoji,sort_order:Date.now()}]})
+      .then(function(){closeClassicModal();showToast('✓ Tema agregado');loadClassics();})
+      .catch(function(){showToast('Error al agregar');})
+      .finally(function(){btn.disabled=false;btn.textContent='Agregar';});
+  }
+}
+
+function deleteClassic(id,title){
+  if(!confirm('¿Eliminar "'+title+'" del carrusel?'))return;
+  sbFetch('karaoke_classics?id=eq.'+id,{method:'DELETE'})
+    .then(function(){showToast('✓ Tema eliminado');loadClassics();})
+    .catch(function(){showToast('Error al eliminar');});
+}
+
+document.getElementById('classic-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeClassicModal();});
+document.getElementById('cf-vid').addEventListener('blur',function(){if(this.value.trim())previewYT();});
+
+</script>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🎤 karaoke</div>
+    <div class="login-sub">Master Panel</div>
+    <input type="password" id="master-pwd" placeholder="Contraseña maestra" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="header-logo">karaoke<span>night</span></div>
+    <div class="master-badge">Master</div>
+    <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+  </header>
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="stat-pubs">—</div><div class="stat-label">Pubs activos</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-requests">—</div><div class="stat-label">Pedidos hoy</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-msgs">—</div><div class="stat-label">Mensajes hoy</div></div>
+    </div>
+    <!-- Pubs -->
+    <div class="section-header">
+      <div class="section-title">Pubs registrados</div>
+      <button class="create-btn" onclick="openCreateModal()">+ Nuevo pub</button>
+    </div>
+    <div id="pubs-grid"><div class="pubs-empty">Cargando...</div></div>
+  </div>
+      <!-- Classics section -->
+      <div id="classics-section" style="margin-top:32px;">
+        <div class="section-header">
+          <div class="section-title">🎶 Vitrina de clásicos</div>
+          <button class="create-btn" onclick="openClassicModal()">+ Agregar tema</button>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:16px;">
+          Estos temas aparecen en el carrusel de la pantalla touch de todos los pubs.
+        </div>
+        <div id="classics-grid"><div class="pubs-empty">Cargando...</div></div>
+      </div>
+</div>
+
+<!-- Modal crear/editar -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Nuevo pub</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>ID del pub <span style="color:var(--red)">*</span></label>
+        <input type="text" id="f-id" placeholder="ej: elpatio, labodega" maxlength="30">
+        <div class="hint">Solo letras minúsculas, números y guiones. No se puede cambiar después.</div>
+      </div>
+      <div class="field">
+        <label>Nombre del pub <span style="color:var(--red)">*</span></label>
+        <input type="text" id="f-name" placeholder="ej: El Patio Bar">
+      </div>
+      <div class="field">
+        <label>Ciudad</label>
+        <input type="text" id="f-city" placeholder="ej: Santiago">
+      </div>
+      <div class="field">
+        <label>Contraseña del DJ <span style="color:var(--red)">*</span></label>
+        <input type="text" id="f-pwd" placeholder="Contraseña para el panel DJ">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-save" onclick="savePub()" id="modal-save-btn">Crear pub</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal links -->
+<div id="links-modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔗 Links del pub</div>
+      <button class="modal-close" onclick="closeLinksModal()">×</button>
+    </div>
+    <div class="modal-body" id="links-modal-body"></div>
+    <div class="modal-footer">
+      <button class="modal-save" onclick="closeLinksModal()">Listo</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- QR Modal -->
+<div id="qr-modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">📱 Código QR del pub</div>
+      <button class="modal-close" onclick="closeQrModal()">×</button>
+    </div>
+    <div class="qr-modal-body">
+      <div id="qr-preview-wrap">
+        <div class="qr-app-name">KARA - TOTEM</div>
+        <div class="qr-pub-name" id="qr-pub-name-display">—</div>
+        <div id="qr-canvas-container"></div>
+        <div class="qr-instruction">Escanea el código QR para<br>pedir tu karaoke desde tu celular</div>
+      </div>
+      <button class="download-btn" onclick="downloadQR()">⬇ Descargar imagen</button>
+      <button class="modal-cancel" style="width:100%;text-align:center;" onclick="closeQrModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Classic modal -->
+<div id="classic-modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title" id="classic-modal-title">Agregar tema</div>
+      <button class="modal-close" onclick="closeClassicModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Título del tema <span style="color:var(--red)">*</span></label>
+        <input type="text" id="cf-title" placeholder="ej: Como la Flor">
+      </div>
+      <div class="field">
+        <label>Artista <span style="color:var(--red)">*</span></label>
+        <input type="text" id="cf-artist" placeholder="ej: Selena">
+      </div>
+      <div class="field">
+        <label>ID de YouTube <span style="color:var(--red)">*</span></label>
+        <input type="text" id="cf-vid" placeholder="ej: NRFGnmcFfGg">
+        <div class="hint">Pega el ID o la URL completa de YouTube — se extrae automáticamente.<br>
+          Ej: <strong>NRFGnmcFfGg</strong> o youtube.com/watch?v=NRFGnmcFfGg&list=...
+        </div>
+      </div>
+      <div class="field">
+        <label>Emoji</label>
+        <input type="text" id="cf-emoji" placeholder="ej: 🌸" maxlength="4">
+        <div class="hint">Un emoji que representa el tema (opcional)</div>
+      </div>
+      <div id="cf-preview" style="display:none;margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid var(--border);">
+        <img id="cf-preview-img" src="" style="width:100%;height:140px;object-fit:cover;" onerror="this.style.display='none'">
+      </div>
+      <button onclick="previewYT()" style="margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--muted);font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        👁 Preview portada
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeClassicModal()">Cancelar</button>
+      <button class="modal-save" onclick="saveClassic()" id="classic-save-btn">Agregar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var SB_URL='https://dyyftbaniffvyeqmnayh.supabase.co';
+var SB_KEY='sb_publishable_zeq17EOddIPy9r_8KdeLNg_ZDyTGOmU';
+// Contraseña maestra — cámbiala aquí
+var MASTER_PWD='karaoke2025master';
+var BASE_URL=window.location.origin+window.location.pathname.replace('master.html','');
+var editingId=null;
+
+function sbFetch(path,opts){
+  var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(opts&&opts.prefer)h['Prefer']=opts.prefer;
+  return fetch(SB_URL+'/rest/v1/'+path,{method:opts&&opts.method?opts.method:'GET',headers:h,body:opts&&opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.status===204?{}:r.json();});
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+function doLogin(){
+  var pwd=document.getElementById('master-pwd').value;
+  if(pwd===MASTER_PWD){
+    sessionStorage.setItem('master_ok','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadAll();
+  } else {
+    var e=document.getElementById('login-err');e.style.display='block';
+    setTimeout(function(){e.style.display='none';},3000);
+    document.getElementById('master-pwd').value='';
+  }
+}
+function doLogout(){sessionStorage.removeItem('master_ok');location.reload();}
+if(sessionStorage.getItem('master_ok')==='1'){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadAll();
+}
+document.getElementById('master-pwd').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// ── Load ──────────────────────────────────────────────────────────────────
+function loadAll(){
+  loadPubs();
+  loadStats();
+  loadClassics();
+}
+
+function loadPubs(){
+  sbFetch('karaoke_pubs?select=*&order=created_at.desc').then(function(data){
+    var el=document.getElementById('pubs-grid');
+    document.getElementById('stat-pubs').textContent=Array.isArray(data)?data.length:0;
+    if(!Array.isArray(data)||!data.length){el.innerHTML='<div class="pubs-empty">No hay pubs registrados aún.<br>Crea el primero con el botón de arriba.</div>';return;}
+    var html='';
+    data.forEach(function(pub){
+      html+='<div class="pub-card">';
+      html+='<div class="pub-icon">🍺</div>';
+      html+='<div class="pub-info">';
+      html+='<div class="pub-name">'+pub.name+'</div>';
+      html+='<div class="pub-id">id: '+pub.id+(pub.city?' · '+pub.city:'')+'</div>';
+      html+='<div class="pub-meta"><span class="pub-tag active">Activo</span><span class="pub-tag">DJ: '+pub.admin_password+'</span></div>';
+      html+='</div>';
+      html+='<div class="pub-actions">';
+      html+='<button class="act-btn btn-link" onclick="openLinksModal(\''+pub.id+'\',\''+pub.name.replace(/'/g,"\\'")+'\')" title="Ver links">🔗 Links</button>';
+      html+='<button class="act-btn btn-edit" onclick="openEditModal('+JSON.stringify(pub).replace(/"/g,'&quot;')+')" title="Editar">✏️ Editar</button>';
+      html+='<button class="act-btn btn-delete" onclick="deletePub(\''+pub.id+'\',\''+pub.name.replace(/'/g,"\\'")+'\')" title="Eliminar">×</button>';
+      html+='</div></div>';
+    });
+    el.innerHTML=html;
+  }).catch(function(){document.getElementById('pubs-grid').innerHTML='<div class="pubs-empty">Error al cargar los pubs</div>';});
+}
+
+function loadStats(){
+  var today=new Date().toISOString().split('T')[0];
+  sbFetch('karaoke_requests?created_at=gte.'+today+'T00:00:00&select=id').then(function(d){
+    document.getElementById('stat-requests').textContent=Array.isArray(d)?d.length:0;
+  }).catch(function(){});
+  sbFetch('karaoke_messages?created_at=gte.'+today+'T00:00:00&select=id').then(function(d){
+    document.getElementById('stat-msgs').textContent=Array.isArray(d)?d.length:0;
+  }).catch(function(){});
+}
+
+// ── Modal crear/editar ────────────────────────────────────────────────────
+function openCreateModal(){
+  editingId=null;
+  document.getElementById('modal-title').textContent='Nuevo pub';
+  document.getElementById('modal-save-btn').textContent='Crear pub';
+  document.getElementById('f-id').value='';
+  document.getElementById('f-id').disabled=false;
+  document.getElementById('f-name').value='';
+  document.getElementById('f-city').value='';
+  document.getElementById('f-pwd').value='';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openEditModal(pub){
+  editingId=pub.id;
+  document.getElementById('modal-title').textContent='Editar pub';
+  document.getElementById('modal-save-btn').textContent='Guardar cambios';
+  document.getElementById('f-id').value=pub.id;
+  document.getElementById('f-id').disabled=true;
+  document.getElementById('f-name').value=pub.name||'';
+  document.getElementById('f-city').value=pub.city||'';
+  document.getElementById('f-pwd').value=pub.admin_password||'';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+
+function savePub(){
+  var id=document.getElementById('f-id').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+  var name=document.getElementById('f-name').value.trim();
+  var city=document.getElementById('f-city').value.trim();
+  var pwd=document.getElementById('f-pwd').value.trim();
+  if(!name){showToast('⚠️ El nombre es obligatorio');return;}
+  if(!pwd){showToast('⚠️ La contraseña es obligatoria');return;}
+  if(!editingId&&!id){showToast('⚠️ El ID es obligatorio');return;}
+
+  var btn=document.getElementById('modal-save-btn');
+  btn.textContent='Guardando...';btn.disabled=true;
+
+  if(editingId){
+    // Editar
+    sbFetch('karaoke_pubs?id=eq.'+editingId,{method:'PATCH',prefer:'return=representation',body:{name:name,city:city,admin_password:pwd}})
+      .then(function(){closeModal();showToast('✓ Pub actualizado');loadAll();})
+      .catch(function(){showToast('Error al guardar');})
+      .finally(function(){btn.textContent='Guardar cambios';btn.disabled=false;});
+  } else {
+    // Crear
+    sbFetch('karaoke_pubs',{method:'POST',prefer:'return=representation',body:[{id:id,name:name,city:city,admin_password:pwd}]})
+      .then(function(data){
+        if(Array.isArray(data)&&data[0]){
+          closeModal();showToast('✓ Pub creado correctamente');loadAll();
+        } else if(data&&data.code==='23505'){
+          showToast('⚠️ Ese ID ya existe, elige otro');
+        } else if(data&&data.message){
+          showToast('⚠️ '+data.message);
+        } else {
+          closeModal();showToast('✓ Pub creado correctamente');loadAll();
+        }
+      })
+      .catch(function(){showToast('Error al crear el pub');})
+      .finally(function(){btn.textContent='Crear pub';btn.disabled=false;});
+  }
+}
+
+// ── Eliminar pub ──────────────────────────────────────────────────────────
+function deletePub(id,name){
+  if(!confirm('¿Eliminar el pub "'+name+'"?\nSe eliminarán todos sus pedidos y mensajes. Esta acción no se puede deshacer.'))return;
+  // Eliminar datos relacionados primero
+  Promise.all([
+    sbFetch('karaoke_requests?pub_id=eq.'+id,{method:'DELETE'}),
+    sbFetch('karaoke_messages?pub_id=eq.'+id,{method:'DELETE'}),
+    sbFetch('karaoke_top?pub_id=eq.'+id,{method:'DELETE'}),
+    sbFetch('karaoke_state?pub_id=eq.'+id,{method:'DELETE'})
+  ]).then(function(){
+    return sbFetch('karaoke_pubs?id=eq.'+id,{method:'DELETE'});
+  }).then(function(){
+    showToast('✓ Pub eliminado');loadAll();
+  }).catch(function(){showToast('Error al eliminar');});
+}
+
+// ── Links modal ───────────────────────────────────────────────────────────
+function openLinksModal(id,name){
+  var karaokeUrl=BASE_URL+'karaoke.html?pub='+id;
+  var djUrl=BASE_URL+'dj.html';
+  var body=document.getElementById('links-modal-body');
+  body.innerHTML=
+    '<p style="font-size:.85rem;color:var(--muted);margin-bottom:16px;">Links para el pub <strong style="color:var(--text)">'+name+'</strong></p>'+
+    '<div class="links-box">'+
+      '<div class="links-label">📱 Pantalla touch del público</div>'+
+      '<div class="link-row">'+
+        '<div class="link-url">'+karaokeUrl+'</div>'+
+        '<button class="copy-btn" onclick="copyLink(\''+karaokeUrl+'\')">Copiar</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="links-box">'+
+      '<div class="links-label">🎛️ Panel DJ</div>'+
+      '<div class="link-row">'+
+        '<div class="link-url">'+djUrl+' <span style="color:var(--muted)">(ID: '+id+')</span></div>'+
+        '<button class="copy-btn" onclick="copyLink(\''+djUrl+'\')">Copiar</button>'+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:.75rem;color:var(--muted);margin-top:12px;line-height:1.5;">El DJ ingresa con su ID de pub y contraseña configurada.</div>';
+  document.getElementById('links-modal-overlay').style.display='flex';
+}
+function closeLinksModal(){document.getElementById('links-modal-overlay').style.display='none';}
+
+function copyLink(url){
+  navigator.clipboard.writeText(url).then(function(){showToast('✓ Link copiado');}).catch(function(){showToast('Link: '+url);});
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+var toastTimeout;
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout=setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+// Cerrar modales al click fuera
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('links-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeLinksModal();});
+
+// ── QR Generator ──────────────────────────────────────────────────────────
+var currentQrPub = null;
+function openQrModal(pubId, pubName) {
+  currentQrPub = {id: pubId, name: pubName};
+  document.getElementById('qr-pub-name-display').textContent = pubName;
+  var container = document.getElementById('qr-canvas-container');
+  container.innerHTML = '';
+  var url = BASE_URL + 'karaoke.html?pub=' + pubId;
+  new QRCode(container, {
+    text: url,
+    width: 200,
+    height: 200,
+    colorDark: '#0c0c0e',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  document.getElementById('qr-modal-overlay').style.display = 'flex';
+}
+
+function closeQrModal() {
+  document.getElementById('qr-modal-overlay').style.display = 'none';
+}
+
+function downloadQR() {
+  var wrap = document.getElementById('qr-preview-wrap');
+  // Use html2canvas-like approach with canvas
+  var qrImg = wrap.querySelector('img') || wrap.querySelector('canvas');
+  if (!qrImg) { showToast('⚠️ Error al generar imagen'); return; }
+
+  var canvas = document.createElement('canvas');
+  var W = 500, H = 580;
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Rounded rect helper
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+  }
+
+  // Gold top bar
+  ctx.fillStyle = '#d4a853';
+  roundRect(0,0,W,80,0);
+  ctx.fill();
+
+  // App name
+  ctx.fillStyle = '#0c0c0e';
+  ctx.font = 'bold 32px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('KARA - TOTEM', W/2, 52);
+
+  // Pub name
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = '500 24px sans-serif';
+  ctx.fillText(currentQrPub.name, W/2, 130);
+
+  // Draw QR
+  var src = qrImg.tagName === 'CANVAS' ? qrImg.toDataURL() : qrImg.src;
+  var img = new Image();
+  img.onload = function() {
+    var qrSize = 240;
+    var qrX = (W - qrSize) / 2;
+    var qrY = 155;
+
+    // QR border
+    ctx.fillStyle = '#f5f5f5';
+    roundRect(qrX-16, qrY-16, qrSize+32, qrSize+32, 16);
+    ctx.fill();
+    ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+    // Instruction text
+    ctx.fillStyle = '#555555';
+    ctx.font = '15px sans-serif';
+    ctx.fillText('Escanea el código QR para pedir', W/2, qrY + qrSize + 60);
+    ctx.fillText('tu karaoke desde tu celular 🎤', W/2, qrY + qrSize + 82);
+
+    // Bottom gold line
+    ctx.fillStyle = '#d4a853';
+    ctx.fillRect(0, H-8, W, 8);
+
+    // Download
+    var a = document.createElement('a');
+    a.download = 'qr-karaoke-' + currentQrPub.id + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✓ Imagen descargada');
+  };
+  img.src = src;
+}
+
+document.getElementById('qr-modal-overlay').addEventListener('click', function(e){if(e.target===this)closeQrModal();});
+
+
+// ── Classics Manager ──────────────────────────────────────────────────────
+var editingClassicId = null;
+
+function loadClassics(){
+  sbFetch('karaoke_classics?select=*&order=sort_order').then(function(data){
+    var el = document.getElementById('classics-grid');
+    if(!Array.isArray(data)||!data.length){
+      el.innerHTML='<div class="pubs-empty">No hay temas aún. Agrega el primero.</div>';
+      return;
+    }
+    var html='';
+    data.forEach(function(c){
+      var thumb='https://img.youtube.com/vi/'+c.video_id+'/mqdefault.jpg';
+      html+='<div class="pub-card" style="gap:12px;">';
+      html+='<img src="'+thumb+'" style="width:64px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display=&quot;none&quot;">';
+      html+='<div class="pub-info">';
+      html+='<div class="pub-name">'+(c.emoji||'🎵')+' '+c.title+'</div>';
+      html+='<div class="pub-id">'+c.artist+' · ID: '+c.video_id+'</div>';
+      html+='</div>';
+      html+='<div class="pub-actions">';
+      html+='<button class="act-btn btn-edit" data-classic="'+JSON.stringify(c).replace(/"/g,"&quot;")+'" onclick="openEditClassic(JSON.parse(this.dataset.classic))">✏️ Editar</button>';
+      html+='<button class="act-btn btn-delete" data-cid="'+c.id+'" data-ctitle="'+c.title.replace(/"/g,"&quot;")+'" onclick="deleteClassic(this.dataset.cid,this.dataset.ctitle)">×</button>';
+      html+='</div></div>';
+    });
+    el.innerHTML=html;
+  }).catch(function(){ document.getElementById('classics-grid').innerHTML='<div class="pubs-empty">Error al cargar</div>'; });
+}
+
+function openClassicModal(){
+  editingClassicId=null;
+  document.getElementById('classic-modal-title').textContent='Agregar tema';
+  document.getElementById('classic-save-btn').textContent='Agregar';
+  document.getElementById('cf-title').value='';
+  document.getElementById('cf-artist').value='';
+  document.getElementById('cf-vid').value='';
+  document.getElementById('cf-emoji').value='';
+  document.getElementById('cf-preview').style.display='none';
+  document.getElementById('classic-modal-overlay').style.display='flex';
+}
+
+function openEditClassic(c){
+  editingClassicId=c.id;
+  document.getElementById('classic-modal-title').textContent='Editar tema';
+  document.getElementById('classic-save-btn').textContent='Guardar';
+  document.getElementById('cf-title').value=c.title||'';
+  document.getElementById('cf-artist').value=c.artist||'';
+  document.getElementById('cf-vid').value=c.video_id||'';
+  document.getElementById('cf-emoji').value=c.emoji||'';
+  previewYT();
+  document.getElementById('classic-modal-overlay').style.display='flex';
+}
+
+function closeClassicModal(){ document.getElementById('classic-modal-overlay').style.display='none'; }
+
+function extractYTId(input){
+  input = input.trim();
+  // Full URL with v= param: youtube.com/watch?v=ID&list=...
+  var m = input.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if(m) return m[1];
+  // Short URL: youtu.be/ID
+  m = input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if(m) return m[1];
+  // Embed URL: youtube.com/embed/ID
+  m = input.match(/embed\/([a-zA-Z0-9_-]{11})/);
+  if(m) return m[1];
+  // Already just the ID (11 chars)
+  m = input.match(/^([a-zA-Z0-9_-]{11})$/);
+  if(m) return m[1];
+  // ID at start before & (like i6CBH_jDkD8&list=...)
+  m = input.match(/^([a-zA-Z0-9_-]{11})&/);
+  if(m) return m[1];
+  return input; // return as-is if nothing matched
+}
+
+function previewYT(){
+  var raw=document.getElementById('cf-vid').value.trim();
+  if(!raw)return;
+  var vid=extractYTId(raw);
+  document.getElementById('cf-vid').value=vid;
+  var img=document.getElementById('cf-preview-img');
+  img.src='https://img.youtube.com/vi/'+vid+'/mqdefault.jpg';
+  img.style.display='block';
+  document.getElementById('cf-preview').style.display='block';
+}
+
+function saveClassic(){
+  var title=document.getElementById('cf-title').value.trim();
+  var artist=document.getElementById('cf-artist').value.trim();
+  var vid=extractYTId(document.getElementById('cf-vid').value.trim());
+  document.getElementById('cf-vid').value=vid;
+  var emoji=document.getElementById('cf-emoji').value.trim()||'🎵';
+  if(!title||!artist||!vid){showToast('⚠️ Título, artista e ID son obligatorios');return;}
+  var btn=document.getElementById('classic-save-btn');
+  btn.disabled=true;btn.textContent='Guardando...';
+
+  if(editingClassicId){
+    sbFetch('karaoke_classics?id=eq.'+editingClassicId,{method:'PATCH',prefer:'return=representation',
+      body:{title:title,artist:artist,video_id:vid,emoji:emoji}})
+      .then(function(){closeClassicModal();showToast('✓ Tema actualizado');loadClassics();})
+      .catch(function(){showToast('Error al guardar');})
+      .finally(function(){btn.disabled=false;btn.textContent='Guardar';});
+  } else {
+    sbFetch('karaoke_classics',{method:'POST',prefer:'return=representation',
+      body:[{title:title,artist:artist,video_id:vid,emoji:emoji,sort_order:Date.now()}]})
+      .then(function(){closeClassicModal();showToast('✓ Tema agregado');loadClassics();})
+      .catch(function(){showToast('Error al agregar');})
+      .finally(function(){btn.disabled=false;btn.textContent='Agregar';});
+  }
+}
+
+function deleteClassic(id,title){
+  if(!confirm('¿Eliminar "'+title+'" del carrusel?'))return;
+  sbFetch('karaoke_classics?id=eq.'+id,{method:'DELETE'})
+    .then(function(){showToast('✓ Tema eliminado');loadClassics();})
+    .catch(function(){showToast('Error al eliminar');});
+}
+
+document.getElementById('classic-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeClassicModal();});
+document.getElementById('cf-vid').addEventListener('blur',function(){if(this.value.trim())previewYT();});
+
+</script>
+</body>
+</html>
