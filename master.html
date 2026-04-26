@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Panel — KARA TOTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#06040f;--neon-pink:#ff2d9b;--neon-blue:#00d4ff;--neon-purple:#b44fff;
+  --neon-yellow:#ffe600;--neon-green:#00ff88;
+  --surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.07);--surface3:rgba(255,255,255,0.11);
+  --border:rgba(255,255,255,0.08);--text:#f5f0ff;--muted:rgba(255,255,255,0.35);
+  --red:#ff4466;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 40% at 10% 0%,rgba(180,79,255,0.15) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 0%,rgba(0,212,255,0.1) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 30% at 50% 100%,rgba(255,45,155,0.07) 0%,transparent 60%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);}
+
+/* ── Login ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-box{position:relative;z-index:1;background:rgba(255,255,255,0.04);border:1px solid rgba(180,79,255,0.3);
+  border-radius:20px;padding:44px 36px;width:340px;text-align:center;overflow:hidden;}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--neon-pink),var(--neon-purple),var(--neon-blue));}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;margin-bottom:4px;}
+.login-logo .k{color:#fff;text-shadow:0 0 10px rgba(255,45,155,0.8),0 0 30px rgba(255,45,155,0.4);}
+.login-logo .t{color:var(--neon-blue);text-shadow:0 0 10px rgba(0,212,255,0.8);}
+.login-logo .dash{color:var(--neon-purple);margin:0 4px;}
+.login-sub{font-size:.68rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:28px;}
+.login-box input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(180,79,255,0.2);
+  border-radius:10px;padding:13px 16px;color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:.95rem;outline:none;margin-bottom:10px;transition:border-color .2s;}
+.login-box input:focus{border-color:rgba(180,79,255,0.6);}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--neon-purple),var(--neon-pink));border:none;
+  border-radius:10px;padding:14px;color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;
+  font-family:'Outfit',sans-serif;box-shadow:0 4px 20px rgba(180,79,255,0.3);}
+.login-btn:hover{opacity:.9;}
+.login-err{color:var(--neon-pink);font-size:.8rem;margin-top:10px;display:none;}
+
+/* ── App ── */
+#app{display:none;min-height:100vh;position:relative;z-index:1;}
+
+/* ── Header ── */
+header{background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(180,79,255,0.2);
+  padding:0 28px;display:flex;align-items:center;gap:14px;height:58px;
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);}
+.h-logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;}
+.h-logo .k{color:#fff;text-shadow:0 0 8px rgba(255,45,155,0.6);}
+.h-logo .t{color:var(--neon-blue);text-shadow:0 0 8px rgba(0,212,255,0.6);}
+.h-logo .dash{color:var(--neon-purple);margin:0 3px;}
+.master-pill{background:rgba(180,79,255,0.12);border:1px solid rgba(180,79,255,0.3);
+  border-radius:20px;padding:4px 12px;font-size:.65rem;letter-spacing:2px;
+  text-transform:uppercase;color:var(--neon-purple);}
+.logout-btn{margin-left:auto;background:transparent;border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px;padding:5px 12px;color:var(--muted);font-size:.75rem;cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:all .2s;}
+.logout-btn:hover{border-color:rgba(255,45,155,0.4);color:var(--neon-pink);}
+
+/* ── Content ── */
+.content{max-width:900px;margin:0 auto;padding:28px 20px 60px;}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;
+  position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card:nth-child(1)::before{background:linear-gradient(90deg,var(--neon-pink),var(--neon-purple));}
+.stat-card:nth-child(2)::before{background:linear-gradient(90deg,var(--neon-purple),var(--neon-blue));}
+.stat-card:nth-child(3)::before{background:linear-gradient(90deg,var(--neon-blue),var(--neon-green));}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;margin-bottom:4px;}
+.stat-card:nth-child(1) .stat-num{color:var(--neon-pink);text-shadow:0 0 12px rgba(255,45,155,0.4);}
+.stat-card:nth-child(2) .stat-num{color:var(--neon-purple);text-shadow:0 0 12px rgba(180,79,255,0.4);}
+.stat-card:nth-child(3) .stat-num{color:var(--neon-blue);text-shadow:0 0 12px rgba(0,212,255,0.4);}
+.stat-label{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+
+/* ── Section ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px;color:var(--text);}
+.create-btn{background:linear-gradient(135deg,var(--neon-purple),var(--neon-pink));border:none;
+  border-radius:10px;padding:9px 18px;color:#fff;font-weight:600;font-size:.8rem;
+  cursor:pointer;font-family:'Outfit',sans-serif;display:flex;align-items:center;gap:6px;
+  box-shadow:0 4px 16px rgba(180,79,255,0.25);}
+.create-btn:hover{opacity:.9;}
+
+/* ── Pub cards ── */
+#pubs-grid{display:flex;flex-direction:column;gap:8px;}
+.pub-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px;display:flex;align-items:center;gap:14px;transition:border-color .2s;}
+.pub-card:hover{border-color:rgba(180,79,255,0.2);}
+.pub-icon{width:42px;height:42px;background:linear-gradient(135deg,rgba(180,79,255,0.2),rgba(0,212,255,0.1));
+  border:1px solid rgba(180,79,255,0.2);border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.pub-info{flex:1;overflow:hidden;}
+.pub-name{font-size:.92rem;font-weight:600;margin-bottom:3px;}
+.pub-id{font-size:.7rem;color:var(--muted);font-family:monospace;}
+.pub-meta{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.pub-tag{font-size:.65rem;letter-spacing:1px;text-transform:uppercase;
+  background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--muted);}
+.pub-tag.active{background:rgba(0,255,136,0.08);border-color:rgba(0,255,136,0.2);color:var(--neon-green);}
+.pub-tag.pwd{background:rgba(180,79,255,0.08);border-color:rgba(180,79,255,0.2);color:var(--neon-purple);}
+.pub-actions{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;}
+.act-btn{border:none;border-radius:8px;padding:7px 11px;font-size:.72rem;font-weight:500;
+  cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;white-space:nowrap;}
+.act-btn:active{transform:scale(.95);}
+.btn-edit{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+.btn-edit:hover{border-color:rgba(180,79,255,0.4);color:var(--neon-purple);}
+.btn-qr{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);color:var(--neon-blue);}
+.btn-qr:hover{background:rgba(0,212,255,0.2);}
+.btn-link{background:rgba(180,79,255,0.1);border:1px solid rgba(180,79,255,0.2);color:var(--neon-purple);}
+.btn-link:hover{background:rgba(180,79,255,0.2);}
+.btn-delete{background:rgba(255,45,155,0.08);border:1px solid rgba(255,45,155,0.15);color:var(--neon-pink);}
+.btn-delete:hover{background:rgba(255,45,155,0.18);}
+.btn-activate{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--neon-green);}
+.btn-activate:hover{background:rgba(0,255,136,0.2);}
+.btn-deactivate{background:rgba(255,230,0,0.1);border:1px solid rgba(255,230,0,0.3);color:var(--neon-yellow);}
+.btn-deactivate:hover{background:rgba(255,230,0,0.2);}
+.pub-tag.inactive{background:rgba(255,45,155,0.08);border-color:rgba(255,45,155,0.2);color:var(--neon-pink);}
+.pubs-empty{text-align:center;color:var(--muted);padding:40px;font-size:.9rem;}
+
+/* ── Classics grid ── */
+#classics-grid{display:flex;flex-direction:column;gap:8px;}
+.classic-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.classic-card:hover{border-color:rgba(255,230,0,0.2);}
+.classic-thumb{width:60px;height:42px;object-fit:cover;border-radius:7px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(180,79,255,0.3),rgba(0,212,255,0.2));}
+.classic-emoji{width:60px;height:42px;display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;background:linear-gradient(135deg,rgba(180,79,255,0.2),rgba(0,212,255,0.1));
+  border-radius:7px;flex-shrink:0;}
+.classic-info{flex:1;overflow:hidden;}
+.classic-title{font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.classic-artist{font-size:.72rem;color:var(--muted);margin-top:2px;}
+.classic-id{font-size:.65rem;color:rgba(180,79,255,0.6);font-family:monospace;margin-top:2px;}
+.classic-actions{display:flex;gap:5px;flex-shrink:0;}
+
+/* ── Modals ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(6,4,15,0.88);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:16px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:rgba(15,10,30,0.98);border:1px solid rgba(180,79,255,0.25);border-radius:18px;
+  width:100%;overflow:hidden;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--neon-pink),var(--neon-purple),var(--neon-blue));}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px;}
+.modal-close{background:transparent;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;
+  padding:4px 8px;line-height:1;transition:color .2s;}
+.modal-close:hover{color:var(--neon-pink);}
+.modal-body{padding:22px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;}
+.field input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(180,79,255,0.2);
+  border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:.9rem;outline:none;transition:border-color .2s;}
+.field input:focus{border-color:rgba(180,79,255,0.5);box-shadow:0 0 0 3px rgba(180,79,255,0.08);}
+.field .hint{font-size:.7rem;color:var(--muted);margin-top:5px;line-height:1.4;}
+.modal-footer{padding:0 22px 22px;display:flex;gap:8px;}
+.modal-save{flex:1;background:linear-gradient(135deg,var(--neon-purple),var(--neon-pink));border:none;
+  border-radius:10px;padding:13px;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;
+  font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(180,79,255,0.2);}
+.modal-save:hover{opacity:.9;}
+.modal-cancel{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;
+  padding:13px 18px;color:var(--muted);font-size:.9rem;cursor:pointer;font-family:'Outfit',sans-serif;}
+.modal-cancel:hover{color:var(--text);}
+
+/* ── QR modal ── */
+.qr-fmt-row{display:flex;gap:8px;margin-bottom:14px;}
+.qr-fmt-btn{flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;
+  padding:9px 4px;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--muted);
+  font-family:'Outfit',sans-serif;transition:all .2s;}
+.qr-fmt-btn.active{background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.4);color:var(--neon-blue);}
+.qr-preview-box{background:#000;border-radius:12px;padding:12px;min-height:240px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:14px;overflow:hidden;}
+.qr-preview-box canvas{max-width:100%;border-radius:6px;}
+.dl-btn{width:100%;border:none;border-radius:10px;padding:13px;font-weight:700;font-size:.9rem;
+  cursor:pointer;font-family:'Outfit',sans-serif;margin-bottom:8px;}
+.dl-btn-primary{background:linear-gradient(135deg,var(--neon-blue),var(--neon-purple));color:#fff;
+  box-shadow:0 4px 16px rgba(0,212,255,0.2);}
+.dl-btn-secondary{background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);}
+
+/* ── Links modal ── */
+.links-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;margin-bottom:10px;}
+.links-label{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.link-row{display:flex;align-items:center;gap:8px;}
+.link-url{flex:1;font-size:.75rem;color:var(--neon-blue);font-family:monospace;word-break:break-all;line-height:1.4;}
+.copy-btn{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);border-radius:7px;
+  padding:6px 10px;color:var(--neon-blue);font-size:.7rem;cursor:pointer;white-space:nowrap;
+  font-family:'Outfit',sans-serif;flex-shrink:0;}
+.copy-btn:active{background:rgba(0,212,255,0.25);}
+
+/* ── Divider ── */
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(180,79,255,0.2),transparent);margin:28px 0;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:rgba(10,6,20,0.97);
+  border:1px solid rgba(180,79,255,0.4);border-radius:12px;padding:11px 18px;
+  font-size:.82rem;color:var(--neon-purple);transform:translateY(80px);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none;
+  box-shadow:0 4px 20px rgba(180,79,255,0.15);}
+.toast.show{transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="k">KARA</span><span class="dash">—</span><span class="t">TOTEM</span>
+    </div>
+    <div class="login-sub">Master Panel</div>
+    <input type="password" id="master-pwd" placeholder="Contraseña maestra" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="h-logo"><span class="k">KARA</span><span class="dash">—</span><span class="t">TOTEM</span></div>
+    <div class="master-pill">Master</div>
+    <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+  </header>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="stat-pubs">—</div><div class="stat-label">Pubs activos</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-requests">—</div><div class="stat-label">Pedidos hoy</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-msgs">—</div><div class="stat-label">Mensajes hoy</div></div>
+    </div>
+
+    <!-- Pubs -->
+    <div class="section-header">
+      <div class="section-title">🍺 Pubs registrados</div>
+      <button class="create-btn" onclick="openCreateModal()">+ Nuevo pub</button>
+    </div>
+    <div id="pubs-grid"><div class="pubs-empty">Cargando...</div></div>
+
+    <div class="section-divider"></div>
+
+    <!-- Classics -->
+    <div class="section-header">
+      <div class="section-title">🎶 Vitrina de clásicos</div>
+      <button class="create-btn" onclick="openClassicModal()">+ Agregar tema</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;">Aparecen en el carrusel de todos los pubs.</div>
+    <div id="classics-grid"><div class="pubs-empty">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- Modal pub crear/editar -->
+<div class="modal-overlay" id="pub-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title" id="pub-modal-title">Nuevo pub</div>
+      <button class="modal-close" onclick="closePubModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>ID del pub *</label>
+        <input type="text" id="f-id" placeholder="ej: elpatio" maxlength="30">
+        <div class="hint">Solo letras minúsculas, números y guiones. No se puede cambiar después.</div>
+      </div>
+      <div class="field"><label>Nombre del pub *</label><input type="text" id="f-name" placeholder="ej: El Patio Bar"></div>
+      <div class="field"><label>Ciudad</label><input type="text" id="f-city" placeholder="ej: Santiago"></div>
+      <div class="field"><label>Contraseña del DJ *</label><input type="text" id="f-pwd" placeholder="Contraseña para el panel DJ"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closePubModal()">Cancelar</button>
+      <button class="modal-save" onclick="savePub()" id="pub-save-btn">Crear pub</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal links -->
+<div class="modal-overlay" id="links-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">🔗 Links del pub</div>
+      <button class="modal-close" onclick="closeModal('links-modal')">×</button>
+    </div>
+    <div class="modal-body" id="links-modal-body"></div>
+    <div class="modal-footer">
+      <button class="modal-save" onclick="closeModal('links-modal')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal QR -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">📱 QR — <span id="qr-pub-label" style="color:var(--neon-blue)">—</span></div>
+      <button class="modal-close" onclick="closeModal('qr-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="qr-fmt-row">
+        <button class="qr-fmt-btn active" onclick="selectFmt('card',this)">🃏 Tarjeta</button>
+        <button class="qr-fmt-btn" onclick="selectFmt('poster',this)">📋 Poster</button>
+        <button class="qr-fmt-btn" onclick="selectFmt('sticker',this)">⭕ Sticker</button>
+      </div>
+      <div class="qr-preview-box">
+        <canvas id="qr-output-canvas"></canvas>
+      </div>
+      <div id="qr-hidden-container" style="display:none;"></div>
+      <button class="dl-btn dl-btn-primary" onclick="downloadCurrentFmt()">⬇ Descargar este formato</button>
+      <button class="dl-btn dl-btn-secondary" onclick="downloadAllFmts()">⬇ Descargar los 3 formatos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal classics -->
+<div class="modal-overlay" id="classic-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title" id="classic-modal-title">Agregar tema</div>
+      <button class="modal-close" onclick="closeModal('classic-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Título del tema *</label><input type="text" id="cf-title" placeholder="ej: Como la Flor"></div>
+      <div class="field"><label>Artista *</label><input type="text" id="cf-artist" placeholder="ej: Selena"></div>
+      <div class="field"><label>ID de YouTube *</label>
+        <input type="text" id="cf-vid" placeholder="ej: NRFGnmcFfGg o URL completa" onblur="previewYT()">
+        <div class="hint">Pega el ID o la URL completa — se extrae automáticamente.</div>
+      </div>
+      <div class="field"><label>Emoji</label><input type="text" id="cf-emoji" placeholder="ej: 🌸" maxlength="4"></div>
+      <div id="cf-preview" style="display:none;margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid var(--border);">
+        <img id="cf-preview-img" src="" style="width:100%;height:140px;object-fit:cover;" onerror="this.style.display='none'">
+      </div>
+      <button onclick="previewYT()" style="margin-top:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:7px 14px;color:var(--muted);font-size:.78rem;cursor:pointer;font-family:'Outfit',sans-serif;">👁 Preview portada</button>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal('classic-modal')">Cancelar</button>
+      <button class="modal-save" onclick="saveClassic()" id="classic-save-btn">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SB_URL='https://dyyftbaniffvyeqmnayh.supabase.co';
+var SB_KEY='sb_publishable_zeq17EOddIPy9r_8KdeLNg_ZDyTGOmU';
+var MASTER_PWD='karaoke2025master';
+var BASE_URL='https://brauzamorar-alt.github.io/kara-totem/';
+var editingPubId=null, editingClassicId=null;
+var currentQrPub=null, currentQrFmt='card';
+
+function sbFetch(path,opts){
+  var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+  if(opts&&opts.prefer)h['Prefer']=opts.prefer;
+  return fetch(SB_URL+'/rest/v1/'+path,{method:opts&&opts.method?opts.method:'GET',headers:h,
+    body:opts&&opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.status===204?{}:r.json();});
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+function doLogin(){
+  var pwd=document.getElementById('master-pwd').value;
+  if(pwd===MASTER_PWD){
+    sessionStorage.setItem('master_ok','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadAll();
+  } else {
+    var e=document.getElementById('login-err');e.style.display='block';
+    setTimeout(function(){e.style.display='none';},3000);
+    document.getElementById('master-pwd').value='';
+  }
+}
+function doLogout(){sessionStorage.removeItem('master_ok');location.reload();}
+document.getElementById('master-pwd').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+if(sessionStorage.getItem('master_ok')==='1'){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadAll();
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(function(o){
+  o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+
+// ── Load all ──────────────────────────────────────────────────────────────
+function loadAll(){loadPubs();loadStats();loadClassics();}
+
+function loadPubs(){
+  sbFetch('karaoke_pubs?select=*&order=created_at.desc').then(function(data){
+    var el=document.getElementById('pubs-grid');
+    document.getElementById('stat-pubs').textContent=Array.isArray(data)?data.length:0;
+    if(!Array.isArray(data)||!data.length){
+      el.innerHTML='<div class="pubs-empty">No hay pubs registrados. Crea el primero ↑</div>';return;
+    }
+    var html='';
+    data.forEach(function(pub){
+      html+='<div class="pub-card">';
+      html+='<div class="pub-icon">🍺</div>';
+      html+='<div class="pub-info">';
+      html+='<div class="pub-name">'+pub.name+'</div>';
+      html+='<div class="pub-id">'+pub.id+(pub.city?' · '+pub.city:'')+'</div>';
+      html+='<div class="pub-meta">';
+      html+='<span class="pub-tag '+(pub.is_active!==false?'active':'inactive')+'">'+( pub.is_active!==false?'Activo':'Inactivo')+'</span>';
+      html+='<span class="pub-tag pwd">🔑 '+pub.admin_password+'</span>';
+      html+='</div></div>';
+      html+='<div class="pub-actions">';
+      html+='<button class="act-btn btn-qr" onclick="openQrModal(\''+pub.id+'\',\''+pub.name.replace(/'/g,"\\'")+'\')">📱 QR</button>';
+      html+='<button class="act-btn btn-link" onclick="openLinksModal(\''+pub.id+'\',\''+pub.name.replace(/'/g,"\\'")+'\')">🔗 Links</button>';
+      html+='<button class="act-btn btn-edit" onclick="openEditPubModal('+JSON.stringify(pub).replace(/"/g,'&quot;')+')">✏️</button>';
+      html+='<button class="act-btn btn-delete" data-pid="'+pub.id+'" data-pname="'+pub.name.replace(/"/g,'&quot;')+'" onclick="deletePub(this.dataset.pid,this.dataset.pname)">×</button>';
+      html+='</div></div>';
+    });
+    el.innerHTML=html;
+  }).catch(function(){document.getElementById('pubs-grid').innerHTML='<div class="pubs-empty">Error al cargar</div>';});
+}
+
+function loadStats(){
+  var today=new Date().toISOString().split('T')[0];
+  sbFetch('karaoke_requests?created_at=gte.'+today+'T00:00:00&select=id').then(function(d){
+    document.getElementById('stat-requests').textContent=Array.isArray(d)?d.length:0;
+  }).catch(function(){});
+  sbFetch('karaoke_messages?created_at=gte.'+today+'T00:00:00&select=id').then(function(d){
+    document.getElementById('stat-msgs').textContent=Array.isArray(d)?d.length:0;
+  }).catch(function(){});
+}
+
+// ── Pub CRUD ──────────────────────────────────────────────────────────────
+function openCreateModal(){
+  editingPubId=null;
+  document.getElementById('pub-modal-title').textContent='Nuevo pub';
+  document.getElementById('pub-save-btn').textContent='Crear pub';
+  ['f-id','f-name','f-city','f-pwd'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('f-id').disabled=false;
+  openModal('pub-modal');
+}
+function openEditPubModal(pub){
+  editingPubId=pub.id;
+  document.getElementById('pub-modal-title').textContent='Editar pub';
+  document.getElementById('pub-save-btn').textContent='Guardar cambios';
+  document.getElementById('f-id').value=pub.id;
+  document.getElementById('f-id').disabled=true;
+  document.getElementById('f-name').value=pub.name||'';
+  document.getElementById('f-city').value=pub.city||'';
+  document.getElementById('f-pwd').value=pub.admin_password||'';
+  openModal('pub-modal');
+}
+function closePubModal(){closeModal('pub-modal');}
+function savePub(){
+  var id=document.getElementById('f-id').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+  var name=document.getElementById('f-name').value.trim();
+  var city=document.getElementById('f-city').value.trim();
+  var pwd=document.getElementById('f-pwd').value.trim();
+  if(!name){showToast('⚠️ El nombre es obligatorio');return;}
+  if(!pwd){showToast('⚠️ La contraseña es obligatoria');return;}
+  if(!editingPubId&&!id){showToast('⚠️ El ID es obligatorio');return;}
+  var btn=document.getElementById('pub-save-btn');
+  btn.disabled=true;btn.textContent='Guardando...';
+  if(editingPubId){
+    sbFetch('karaoke_pubs?id=eq.'+editingPubId,{method:'PATCH',prefer:'return=representation',body:{name:name,city:city,admin_password:pwd}})
+      .then(function(){closePubModal();showToast('✓ Pub actualizado');loadAll();})
+      .catch(function(){showToast('Error al guardar');})
+      .finally(function(){btn.disabled=false;btn.textContent='Guardar cambios';});
+  } else {
+    sbFetch('karaoke_pubs',{method:'POST',prefer:'return=representation',body:[{id:id,name:name,city:city,admin_password:pwd}]})
+      .then(function(data){
+        if(Array.isArray(data)&&data[0]){closePubModal();showToast('✓ Pub creado');loadAll();}
+        else if(data&&data.code==='23505'){showToast('⚠️ Ese ID ya existe');}
+        else{closePubModal();showToast('✓ Pub creado');loadAll();}
+      })
+      .catch(function(){showToast('Error al crear');})
+      .finally(function(){btn.disabled=false;btn.textContent='Crear pub';});
+  }
+}
+function deletePub(id,name){
+  if(!confirm('¿Eliminar "'+name+'"? Se borrarán todos sus datos.'))return;
+  Promise.all([
+    sbFetch('karaoke_requests?pub_id=eq.'+id,{method:'DELETE'}),
+    sbFetch('karaoke_messages?pub_id=eq.'+id,{method:'DELETE'}),
+    sbFetch('karaoke_top?pub_id=eq.'+id,{method:'DELETE'}),
+    sbFetch('karaoke_state?pub_id=eq.'+id,{method:'DELETE'})
+  ]).then(function(){
+    return sbFetch('karaoke_pubs?id=eq.'+id,{method:'DELETE'});
+  }).then(function(){showToast('✓ Pub eliminado');loadAll();})
+  .catch(function(){showToast('Error al eliminar');});
+}
+
+// ── Links modal ───────────────────────────────────────────────────────────
+function openLinksModal(id,name){
+  var kUrl=BASE_URL+'karaoke.html?pub='+id;
+  var dUrl=BASE_URL+'dj.html';
+  document.getElementById('links-modal-body').innerHTML=
+    '<p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">Links para <strong style="color:var(--text)">'+name+'</strong></p>'+
+    '<div class="links-box"><div class="links-label">📱 Pantalla touch / QR celular</div>'+
+    '<div class="link-row"><div class="link-url">'+kUrl+'</div>'+
+    '<button class="copy-btn" onclick="copyLink(\''+kUrl+'\')">Copiar</button></div></div>'+
+    '<div class="links-box"><div class="links-label">🎛️ Panel DJ</div>'+
+    '<div class="link-row"><div class="link-url">'+dUrl+' (ID: '+id+')</div>'+
+    '<button class="copy-btn" onclick="copyLink(\''+dUrl+'\')">Copiar</button></div></div>';
+  openModal('links-modal');
+}
+function copyLink(url){
+  navigator.clipboard.writeText(url).then(function(){showToast('✓ Link copiado');}).catch(function(){});
+}
+
+// ── QR Generator ──────────────────────────────────────────────────────────
+function openQrModal(pubId,pubName){
+  currentQrPub={id:pubId,name:pubName};
+  document.getElementById('qr-pub-label').textContent=pubName;
+  // Reset format
+  document.querySelectorAll('.qr-fmt-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelector('.qr-fmt-btn').classList.add('active');
+  currentQrFmt='card';
+  // Generate QR
+  generateQRCode(function(){renderQrFormat('card');});
+  openModal('qr-modal');
+}
+
+function generateQRCode(cb){
+  var container=document.getElementById('qr-hidden-container');
+  container.innerHTML='';
+  var url=BASE_URL+'karaoke.html?pub='+currentQrPub.id;
+  new QRCode(container,{text:url,width:300,height:300,colorDark:'#0c0c0e',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  setTimeout(cb,300);
+}
+
+function selectFmt(fmt,btn){
+  currentQrFmt=fmt;
+  document.querySelectorAll('.qr-fmt-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderQrFormat(fmt);
+}
+
+function getQrImg(){
+  var container=document.getElementById('qr-hidden-container');
+  return container.querySelector('canvas')||container.querySelector('img');
+}
+
+function renderQrFormat(fmt){
+  var canvas=document.getElementById('qr-output-canvas');
+  var ctx=canvas.getContext('2d');
+  var qrEl=getQrImg();
+  if(!qrEl)return;
+  var qrSrc=qrEl.tagName==='CANVAS'?qrEl.toDataURL():qrEl.src;
+  var img=new Image();
+  img.onload=function(){
+    if(fmt==='card') drawCard(canvas,ctx,img);
+    else if(fmt==='poster') drawPoster(canvas,ctx,img);
+    else drawSticker(canvas,ctx,img);
+  };
+  img.src=qrSrc;
+}
+
+// ── Format: Tarjeta de mesa (900x900px) ──────────────────────────────────
+function drawCard(canvas,ctx,qrImg){
+  var W=900,H=900;
+  canvas.width=W;canvas.height=H;
+  ctx.fillStyle='#06040f';ctx.fillRect(0,0,W,H);
+  var grd=ctx.createRadialGradient(W/2,0,0,W/2,0,W*0.8);
+  grd.addColorStop(0,'rgba(180,79,255,0.25)');grd.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  var grd2=ctx.createRadialGradient(W,H,0,W,H,W*0.7);
+  grd2.addColorStop(0,'rgba(0,212,255,0.15)');grd2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grd2;ctx.fillRect(0,0,W,H);
+  // Top neon bar
+  var bar=ctx.createLinearGradient(0,0,W,0);
+  bar.addColorStop(0,'#ff2d9b');bar.addColorStop(0.5,'#b44fff');bar.addColorStop(1,'#00d4ff');
+  ctx.fillStyle=bar;ctx.fillRect(0,0,W,6);
+  // Logo KARA — TOTEM separated
+  ctx.textAlign='center';
+  ctx.font='bold 110px Bebas Neue,Arial Black,sans-serif';
+  ctx.shadowBlur=30;
+  ctx.fillStyle='#ff2d9b';ctx.shadowColor='#ff2d9b';
+  ctx.fillText('KARA',W/2-160,115);
+  ctx.fillStyle='#b44fff';ctx.shadowColor='#b44fff';
+  ctx.font='bold 80px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('—',W/2,108);
+  ctx.fillStyle='#00d4ff';ctx.shadowColor='#00d4ff';
+  ctx.font='bold 110px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('TOTEM',W/2+160,115);
+  ctx.shadowBlur=0;
+  // Pub name white
+  ctx.font='600 44px Outfit,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(currentQrPub.name,W/2,178);
+  // QR white bg
+  var qrSize=460,qrX=(W-qrSize)/2,qrY=210;
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();roundRect2(ctx,qrX-20,qrY-20,qrSize+40,qrSize+40,20);ctx.fill();
+  ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
+  // Instruction white
+  ctx.font='500 34px Outfit,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText('Escanea para pedir tu karaoke',W/2,740);
+  ctx.font='500 30px Outfit,Arial,sans-serif';
+  ctx.fillStyle='rgba(180,79,255,0.9)';
+  ctx.fillText('desde tu celular 🎤',W/2,785);
+  // Bottom bar
+  ctx.fillStyle=bar;ctx.fillRect(0,H-6,W,6);
+}
+
+// ── Format: Poster vertical (800x1200px) ────────────────────────────────
+function drawPoster(canvas,ctx,qrImg){
+  var W=800,H=1200;
+  canvas.width=W;canvas.height=H;
+  ctx.fillStyle='#06040f';ctx.fillRect(0,0,W,H);
+  var grd=ctx.createRadialGradient(W/2,H*0.3,0,W/2,H*0.3,W);
+  grd.addColorStop(0,'rgba(180,79,255,0.2)');grd.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  var grd2=ctx.createLinearGradient(0,0,W,0);
+  grd2.addColorStop(0,'#ff2d9b');grd2.addColorStop(0.5,'#b44fff');grd2.addColorStop(1,'#00d4ff');
+  ctx.fillStyle=grd2;ctx.fillRect(0,0,W,8);
+  // Mic emoji
+  ctx.font='90px serif';ctx.textAlign='center';
+  ctx.fillText('🎤',W/2,120);
+  // Logo separated
+  ctx.shadowBlur=40;
+  ctx.fillStyle='#ff2d9b';ctx.shadowColor='#ff2d9b';
+  ctx.font='bold 120px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('KARA',W/2-170,245);
+  ctx.fillStyle='#b44fff';ctx.shadowColor='#b44fff';
+  ctx.font='bold 90px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('—',W/2,238);
+  ctx.fillStyle='#00d4ff';ctx.shadowColor='#00d4ff';
+  ctx.font='bold 120px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('TOTEM',W/2+170,245);
+  ctx.shadowBlur=0;
+  // Tagline
+  ctx.font='500 38px Outfit,Arial,sans-serif';
+  ctx.fillStyle='rgba(0,212,255,0.8)';
+  ctx.fillText('¡Pide tu karaoke desde el celular!',W/2,305);
+  // Pub name
+  ctx.font='600 50px Outfit,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(currentQrPub.name,W/2,375);
+  // QR
+  var qrSize=480,qrX=(W-qrSize)/2,qrY=415;
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();roundRect2(ctx,qrX-24,qrY-24,qrSize+48,qrSize+48,24);ctx.fill();
+  ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
+  // Steps WHITE
+  var steps=['1. Abre la cámara de tu celular','2. Apunta al código QR','3. Elige tu tema y pide al D.J. 🎶'];
+  ctx.font='500 32px Outfit,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';
+  steps.forEach(function(s,i){ctx.fillText(s,W/2,990+i*56);});
+  // Bottom
+  ctx.fillStyle=grd2;ctx.fillRect(0,H-8,W,8);
+}
+
+// ── Format: Sticker redondo (700x700px) ─────────────────────────────────
+function drawSticker(canvas,ctx,qrImg){
+  var W=700,H=700,R=340,cx=W/2,cy=H/2;
+  canvas.width=W;canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+  // Clip to circle
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+  ctx.fillStyle='#06040f';ctx.fillRect(0,0,W,H);
+  var grd=ctx.createRadialGradient(cx,cy*0.6,0,cx,cy,R);
+  grd.addColorStop(0,'rgba(180,79,255,0.3)');grd.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  ctx.restore();
+  // Neon ring
+  var ringGrd=ctx.createLinearGradient(0,0,W,H);
+  ringGrd.addColorStop(0,'#ff2d9b');ringGrd.addColorStop(0.5,'#b44fff');ringGrd.addColorStop(1,'#00d4ff');
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle=ringGrd;ctx.lineWidth=18;ctx.stroke();
+  // Inner clip
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R-9,0,Math.PI*2);ctx.clip();
+  // Logo separated + centered vertically
+  ctx.textAlign='center';
+  ctx.font='bold 52px Bebas Neue,Arial Black,sans-serif';
+  ctx.shadowBlur=18;
+  ctx.fillStyle='#ff2d9b';ctx.shadowColor='#ff2d9b';
+  ctx.fillText('KARA',cx-75,82);
+  ctx.fillStyle='#b44fff';ctx.shadowColor='#b44fff';
+  ctx.font='bold 40px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('—',cx,77);
+  ctx.fillStyle='#00d4ff';ctx.shadowColor='#00d4ff';
+  ctx.font='bold 52px Bebas Neue,Arial Black,sans-serif';
+  ctx.fillText('TOTEM',cx+78,82);
+  ctx.shadowBlur=0;
+  // QR centered
+  var qrSize=330,qrX=cx-qrSize/2,qrY=100;
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();roundRect2(ctx,qrX-14,qrY-14,qrSize+28,qrSize+28,14);ctx.fill();
+  ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
+  // Pub name
+  ctx.font='600 32px Outfit,Arial,sans-serif';
+  ctx.fillStyle='rgba(0,212,255,0.9)';
+  ctx.fillText(currentQrPub.name,cx,476);
+  // Instruction WHITE + separated line
+  ctx.font='500 22px Outfit,Arial,sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText('Escanea y pide tu karaoke',cx,514);
+  ctx.fillText('desde tu celular 🎤',cx,542);
+  ctx.restore();
+}
+
+function roundRect2(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function downloadCurrentFmt(){
+  var canvas=document.getElementById('qr-output-canvas');
+  var a=document.createElement('a');
+  a.download='kara-totem-'+currentQrFmt+'-'+currentQrPub.id+'.png';
+  a.href=canvas.toDataURL('image/png');a.click();
+  showToast('✓ Descargando '+currentQrFmt);
+}
+
+function downloadAllFmts(){
+  var fmts=['card','poster','sticker'];
+  var canvas=document.getElementById('qr-output-canvas');
+  var ctx=canvas.getContext('2d');
+  var qrEl=getQrImg();
+  if(!qrEl)return;
+  var qrSrc=qrEl.tagName==='CANVAS'?qrEl.toDataURL():qrEl.src;
+  var img=new Image();
+  img.onload=function(){
+    var i=0;
+    function next(){
+      if(i>=fmts.length){showToast('✓ Los 3 formatos descargados');return;}
+      var fmt=fmts[i];
+      if(fmt==='card')drawCard(canvas,ctx,img);
+      else if(fmt==='poster')drawPoster(canvas,ctx,img);
+      else drawSticker(canvas,ctx,img);
+      setTimeout(function(){
+        var a=document.createElement('a');
+        a.download='kara-totem-'+fmt+'-'+currentQrPub.id+'.png';
+        a.href=canvas.toDataURL('image/png');a.click();
+        i++;setTimeout(next,500);
+      },100);
+    }
+    next();
+  };
+  img.src=qrSrc;
+}
+
+// ── Classics ──────────────────────────────────────────────────────────────
+function loadClassics(){
+  sbFetch('karaoke_classics?select=*&order=sort_order').then(function(data){
+    var el=document.getElementById('classics-grid');
+    if(!Array.isArray(data)||!data.length){
+      el.innerHTML='<div class="pubs-empty">No hay temas. Agrega el primero ↑</div>';return;
+    }
+    var html='';
+    data.forEach(function(c){
+      var thumb='https://img.youtube.com/vi/'+c.video_id+'/mqdefault.jpg';
+      html+='<div class="classic-card">';
+      html+='<div class="classic-emoji">'+(c.emoji||'🎵')+'</div>';
+      html+='<div class="classic-info">';
+      html+='<div class="classic-title">'+c.title+'</div>';
+      html+='<div class="classic-artist">'+c.artist+'</div>';
+      html+='<div class="classic-id">ID: '+c.video_id+'</div>';
+      html+='</div>';
+      html+='<div class="classic-actions">';
+      html+='<button class="act-btn btn-edit" data-classic="'+JSON.stringify(c).replace(/"/g,'&quot;')+'" onclick="openEditClassic(JSON.parse(this.dataset.classic))">✏️</button>';
+      html+='<button class="act-btn btn-delete" data-cid="'+c.id+'" data-ctitle="'+c.title.replace(/"/g,'&quot;')+'" onclick="deleteClassic(this.dataset.cid,this.dataset.ctitle)">×</button>';
+      html+='</div></div>';
+    });
+    el.innerHTML=html;
+  }).catch(function(){});
+}
+
+function openClassicModal(){
+  editingClassicId=null;
+  document.getElementById('classic-modal-title').textContent='Agregar tema';
+  document.getElementById('classic-save-btn').textContent='Agregar';
+  ['cf-title','cf-artist','cf-vid','cf-emoji'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('cf-preview').style.display='none';
+  openModal('classic-modal');
+}
+function openEditClassic(c){
+  editingClassicId=c.id;
+  document.getElementById('classic-modal-title').textContent='Editar tema';
+  document.getElementById('classic-save-btn').textContent='Guardar';
+  document.getElementById('cf-title').value=c.title||'';
+  document.getElementById('cf-artist').value=c.artist||'';
+  document.getElementById('cf-vid').value=c.video_id||'';
+  document.getElementById('cf-emoji').value=c.emoji||'';
+  previewYT();
+  openModal('classic-modal');
+}
+
+function extractYTId(input){
+  input=input.trim();
+  var m=input.match(/[?&]v=([a-zA-Z0-9_-]{11})/);if(m)return m[1];
+  m=input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);if(m)return m[1];
+  m=input.match(/embed\/([a-zA-Z0-9_-]{11})/);if(m)return m[1];
+  m=input.match(/^([a-zA-Z0-9_-]{11})$/);if(m)return m[1];
+  m=input.match(/^([a-zA-Z0-9_-]{11})&/);if(m)return m[1];
+  return input;
+}
+function previewYT(){
+  var raw=document.getElementById('cf-vid').value.trim();if(!raw)return;
+  var vid=extractYTId(raw);
+  document.getElementById('cf-vid').value=vid;
+  var img=document.getElementById('cf-preview-img');
+  img.src='https://img.youtube.com/vi/'+vid+'/mqdefault.jpg';
+  img.style.display='block';
+  document.getElementById('cf-preview').style.display='block';
+}
+function saveClassic(){
+  var title=document.getElementById('cf-title').value.trim();
+  var artist=document.getElementById('cf-artist').value.trim();
+  var vid=extractYTId(document.getElementById('cf-vid').value.trim());
+  var emoji=document.getElementById('cf-emoji').value.trim()||'🎵';
+  if(!title||!artist||!vid){showToast('⚠️ Título, artista e ID son obligatorios');return;}
+  var btn=document.getElementById('classic-save-btn');
+  btn.disabled=true;btn.textContent='Guardando...';
+  if(editingClassicId){
+    sbFetch('karaoke_classics?id=eq.'+editingClassicId,{method:'PATCH',prefer:'return=representation',
+      body:{title:title,artist:artist,video_id:vid,emoji:emoji}})
+      .then(function(){closeModal('classic-modal');showToast('✓ Tema actualizado');loadClassics();})
+      .catch(function(){showToast('Error');}).finally(function(){btn.disabled=false;btn.textContent='Guardar';});
+  } else {
+    sbFetch('karaoke_classics',{method:'POST',prefer:'return=representation',
+      body:[{title:title,artist:artist,video_id:vid,emoji:emoji,sort_order:Date.now()}]})
+      .then(function(){closeModal('classic-modal');showToast('✓ Tema agregado');loadClassics();})
+      .catch(function(){showToast('Error');}).finally(function(){btn.disabled=false;btn.textContent='Agregar';});
+  }
+}
+function deleteClassic(id,title){
+  if(!confirm('¿Eliminar "'+title+'"?'))return;
+  sbFetch('karaoke_classics?id=eq.'+id,{method:'DELETE'})
+    .then(function(){showToast('✓ Eliminado');loadClassics();}).catch(function(){showToast('Error');});
+}
+
+// ── Toggle pub active ────────────────────────────────────────────────────
+function togglePubActive(id, currentlyActive){
+  var newState = !currentlyActive;
+  sbFetch('karaoke_pubs?id=eq.'+id,{method:'PATCH',prefer:'return=representation',body:{is_active:newState}})
+    .then(function(){
+      showToast(newState?'✓ Pub activado':'⚠️ Pub desactivado');
+      loadPubs();
+    }).catch(function(){showToast('Error al cambiar estado');});
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+var toastT;
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2500);
+}
+</script>
+</body>
+</html>

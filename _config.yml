@@ -1,0 +1,7 @@
+include:
+  - index.html
+  - admin.html
+  - karaoke.html
+  - dj.html
+  - master.html
+  - superadmin.html
