@@ -264,9 +264,25 @@ function seekToCoro(key){
   var pl=players[key],att=0;
   var iv=setInterval(function(){
     att++;
-    try{var dur=pl.getDuration();if(dur>60){clearInterval(iv);pl.seekTo(Math.min(Math.max(Math.floor(dur*0.20),45),90),true);}}catch(e){}
-    if(att>20)clearInterval(iv);
-  },200);
+    try{
+      var state=pl.getPlayerState();
+      var dur=pl.getDuration();
+      // Solo buscar cuando está reproduciendo y duración disponible
+      if(state===1&&dur>10){
+        clearInterval(iv);
+        var target=dur>60?Math.min(Math.max(Math.floor(dur*0.20),45),90):Math.floor(dur*0.3);
+        pl.seekTo(target,true);
+        // Verify seek worked after 1s
+        setTimeout(function(){
+          try{
+            var cur=pl.getCurrentTime();
+            if(cur<30&&dur>60){pl.seekTo(target,true);}
+          }catch(e){}
+        },1000);
+      }
+    }catch(e){}
+    if(att>30)clearInterval(iv);
+  },300);
 }
 
 // ── Fade logarítmico ──────────────────────────────────────────────────────
