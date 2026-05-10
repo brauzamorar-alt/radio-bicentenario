@@ -258,31 +258,26 @@ function speakTitle(title,onEnd){
 }
 
 // ── Seek al coro ──────────────────────────────────────────────────────────
+var CORO_START = 60; // segundos para saltar intro/publicidad
+
 function seekToCoro(key){
   if(coroFlags[key])return;
   coroFlags[key]=true;
-  var pl=players[key],att=0;
-  var iv=setInterval(function(){
-    att++;
+  var pl=players[key];
+  // Intentar seekTo inmediatamente y luego verificar
+  var attempts=0;
+  var doSeek=function(){
+    attempts++;
     try{
-      var state=pl.getPlayerState();
-      var dur=pl.getDuration();
-      // Solo buscar cuando está reproduciendo y duración disponible
-      if(state===1&&dur>10){
-        clearInterval(iv);
-        var target=dur>60?Math.min(Math.max(Math.floor(dur*0.20),45),90):Math.floor(dur*0.3);
-        pl.seekTo(target,true);
-        // Verify seek worked after 1s
-        setTimeout(function(){
-          try{
-            var cur=pl.getCurrentTime();
-            if(cur<30&&dur>60){pl.seekTo(target,true);}
-          }catch(e){}
-        },1000);
-      }
+      pl.seekTo(CORO_START,true);
     }catch(e){}
-    if(att>30)clearInterval(iv);
-  },300);
+  };
+  // Primer intento inmediato
+  doSeek();
+  // Reintentos por si el primero fue ignorado
+  setTimeout(doSeek,500);
+  setTimeout(doSeek,1500);
+  setTimeout(doSeek,3000);
 }
 
 // ── Fade logarítmico ──────────────────────────────────────────────────────
