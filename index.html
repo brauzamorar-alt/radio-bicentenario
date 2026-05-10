@@ -233,8 +233,30 @@ window.onYouTubeIframeAPIReady = function() {
         if (activePlayer !== 'A') return;
         if (e.data === YT.PlayerState.ENDED) onSongEnd();
         if (e.data === YT.PlayerState.PLAYING) {
-          if (!coroJumped) { coroJumped = true; ytPlayer.seekTo(60, true); }
           startProgress();
+          // Solo hacer seek si la duracion del VIDEO real ya esta disponible
+          // Los anuncios tienen duracion muy corta (< 30s) o no reportan duracion
+          if (!coroJumped) {
+            var checkDur = setInterval(function() {
+              try {
+                var dur = ytPlayer.getDuration();
+                var cur = ytPlayer.getCurrentTime();
+                // Si duracion > 60s es el video real (no un anuncio)
+                if (dur > 60 && cur < 30) {
+                  coroJumped = true;
+                  clearInterval(checkDur);
+                  ytPlayer.seekTo(60, true);
+                }
+                // Si ya pasamos de los 30s sin hacer seek, cancelar
+                if (cur >= 30) {
+                  coroJumped = true;
+                  clearInterval(checkDur);
+                }
+              } catch(e) { clearInterval(checkDur); }
+            }, 500);
+            // Cancelar despues de 20s por seguridad
+            setTimeout(function() { clearInterval(checkDur); }, 20000);
+          }
         }
       }
     }
@@ -248,8 +270,25 @@ window.onYouTubeIframeAPIReady = function() {
         if (activePlayer !== 'B') return;
         if (e.data === YT.PlayerState.ENDED) onSongEnd();
         if (e.data === YT.PlayerState.PLAYING) {
-          if (!coroJumped) { coroJumped = true; ytPlayerB.seekTo(60, true); }
           startProgress();
+          if (!coroJumped) {
+            var checkDurB = setInterval(function() {
+              try {
+                var dur = ytPlayerB.getDuration();
+                var cur = ytPlayerB.getCurrentTime();
+                if (dur > 60 && cur < 30) {
+                  coroJumped = true;
+                  clearInterval(checkDurB);
+                  ytPlayerB.seekTo(60, true);
+                }
+                if (cur >= 30) {
+                  coroJumped = true;
+                  clearInterval(checkDurB);
+                }
+              } catch(e) { clearInterval(checkDurB); }
+            }, 500);
+            setTimeout(function() { clearInterval(checkDurB); }, 20000);
+          }
         }
       }
     }
