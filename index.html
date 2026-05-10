@@ -231,32 +231,21 @@ window.onYouTubeIframeAPIReady = function() {
       onReady: function() { ytReady = true; },
       onStateChange: function(e) {
         if (activePlayer !== 'A') return;
-        if (e.data === YT.PlayerState.ENDED) onSongEnd();
+        if (e.data === YT.PlayerState.ENDED) { onSongEnd(); return; }
         if (e.data === YT.PlayerState.PLAYING) {
+          // Verificar si es el video real (duracion > 60s) y estamos al inicio
+          try {
+            var dur = ytPlayer.getDuration();
+            var cur = ytPlayer.getCurrentTime();
+            if (!coroJumped && dur > 60 && cur < 35) {
+              coroJumped = true;
+              ytPlayer.seekTo(60, true);
+              // Iniciar progress despues del seek
+              setTimeout(function(){ startProgress(); }, 800);
+              return;
+            }
+          } catch(ex) {}
           startProgress();
-          // Solo hacer seek si la duracion del VIDEO real ya esta disponible
-          // Los anuncios tienen duracion muy corta (< 30s) o no reportan duracion
-          if (!coroJumped) {
-            var checkDur = setInterval(function() {
-              try {
-                var dur = ytPlayer.getDuration();
-                var cur = ytPlayer.getCurrentTime();
-                // Si duracion > 60s es el video real (no un anuncio)
-                if (dur > 60 && cur < 30) {
-                  coroJumped = true;
-                  clearInterval(checkDur);
-                  ytPlayer.seekTo(60, true);
-                }
-                // Si ya pasamos de los 30s sin hacer seek, cancelar
-                if (cur >= 30) {
-                  coroJumped = true;
-                  clearInterval(checkDur);
-                }
-              } catch(e) { clearInterval(checkDur); }
-            }, 500);
-            // Cancelar despues de 20s por seguridad
-            setTimeout(function() { clearInterval(checkDur); }, 20000);
-          }
         }
       }
     }
@@ -268,27 +257,19 @@ window.onYouTubeIframeAPIReady = function() {
       onReady: function() { ytReadyB = true; },
       onStateChange: function(e) {
         if (activePlayer !== 'B') return;
-        if (e.data === YT.PlayerState.ENDED) onSongEnd();
+        if (e.data === YT.PlayerState.ENDED) { onSongEnd(); return; }
         if (e.data === YT.PlayerState.PLAYING) {
+          try {
+            var dur = ytPlayerB.getDuration();
+            var cur = ytPlayerB.getCurrentTime();
+            if (!coroJumped && dur > 60 && cur < 35) {
+              coroJumped = true;
+              ytPlayerB.seekTo(60, true);
+              setTimeout(function(){ startProgress(); }, 800);
+              return;
+            }
+          } catch(ex) {}
           startProgress();
-          if (!coroJumped) {
-            var checkDurB = setInterval(function() {
-              try {
-                var dur = ytPlayerB.getDuration();
-                var cur = ytPlayerB.getCurrentTime();
-                if (dur > 60 && cur < 30) {
-                  coroJumped = true;
-                  clearInterval(checkDurB);
-                  ytPlayerB.seekTo(60, true);
-                }
-                if (cur >= 30) {
-                  coroJumped = true;
-                  clearInterval(checkDurB);
-                }
-              } catch(e) { clearInterval(checkDurB); }
-            }, 500);
-            setTimeout(function() { clearInterval(checkDurB); }, 20000);
-          }
         }
       }
     }
@@ -328,19 +309,14 @@ function playIndex(i) {
   coroJumped = false;
   crossfading = false;
   currentIndex = i;
+  clearInterval(progressInterval);
+  document.getElementById('progress-fill').style.width = '0%';
   var song = songs[i];
   document.getElementById('np-title').textContent = song.title;
   activePlayer = 'A';
   if (ytReady && ytPlayer) {
-    ytPlayer.setVolume(0);
+    ytPlayer.setVolume(100);
     ytPlayer.loadVideoById({ videoId: song.videoId });
-    var steps = 0;
-    var fadeIn = setInterval(function() {
-      steps++;
-      var v = Math.min(100, Math.round(100 * steps / 10));
-      try { ytPlayer.setVolume(v); } catch(e) {}
-      if (steps >= 10) clearInterval(fadeIn);
-    }, 150);
   }
   renderQueue();
   sbFetch('state?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: [{ id: 1, current_index: i, current_title: song.title, school_id: schoolId }] }).catch(function() {});
@@ -488,8 +464,14 @@ function loadAll() {
           if (songs[currentIndex]) document.getElementById('np-title').textContent = songs[currentIndex].title;
           if (ytReady && ytPlayer && songs[currentIndex]) playIndex(currentIndex);
         }
-      } else if (songs.length && currentIndex === -1 && ytReady) {
-        playIndex(0);
+      } else if (songs.length && currentIndex === -1 && ytReady && ytPlayer) {
+        try {
+          var state = ytPlayer.getPlayerState();
+          // Solo autoplay si no está ya reproduciendo
+          if (state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
+            playIndex(0);
+          }
+        } catch(ex) { playIndex(0); }
       }
       renderQueue();
     }
