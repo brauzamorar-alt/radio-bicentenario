@@ -224,25 +224,14 @@ function speakTitle(title,onEnd){
 window.onYouTubeIframeAPIReady=function(){
   ytPlayer=new YT.Player('yt-player',{
     height:'1',width:'1',
-    playerVars:{autoplay:0,controls:0},
+    playerVars:{autoplay:0,controls:0,start:60},
     events:{
       onReady:function(){
         ytReady=true;
-        // Cargar primera canción si hay
         if(songs.length&&currentIndex===-1)playIndex(0);
       },
       onStateChange:function(e){
         if(e.data===YT.PlayerState.PLAYING){
-          // Seek al coro: solo si no lo hemos hecho y es el video real
-          if(!coroJumped){
-            var dur=0;
-            try{dur=ytPlayer.getDuration();}catch(ex){}
-            // dur>60 confirma que es el video real, no un anuncio
-            if(dur>60){
-              coroJumped=true;
-              ytPlayer.seekTo(60,true);
-            }
-          }
           startProgress();
         }
         if(e.data===YT.PlayerState.PAUSED){
@@ -254,7 +243,6 @@ window.onYouTubeIframeAPIReady=function(){
         }
       },
       onError:function(){
-        // Si hay error, pasar a la siguiente
         clearInterval(progressInterval);
         if(currentIndex<songs.length-1) playIndex(currentIndex+1);
       }
@@ -326,7 +314,7 @@ function playIndex(i){
   document.getElementById('progress-fill').style.width='0%';
   document.getElementById('np-title').textContent=songs[i].title;
   ytPlayer.setVolume(100);
-  ytPlayer.loadVideoById({videoId:songs[i].videoId});
+  ytPlayer.loadVideoById({videoId:songs[i].videoId,startSeconds:60});
   renderQueue();
   sbFetch('state?on_conflict=id',{method:'POST',prefer:'resolution=merge-duplicates',
     body:[{id:1,current_index:i,current_title:songs[i].title,school_id:SCHOOL_ID}]}).catch(function(){});
