@@ -181,6 +181,7 @@ var SCHOOL_ID=new URLSearchParams(window.location.search).get('school')||'bicent
 var songs=[],messages=[],currentIndex=-1;
 var ytPlayer=null,ytReady=false;
 var progressInterval=null,coroJumped=false,crossfading=false;
+var crossfading_enabled=true,locutor_enabled=true;
 var CROSSFADE_SECS=8;
 
 function sbFetch(path,opts){
@@ -206,6 +207,7 @@ function playJingle(onEnd){
 
 // ── Locutor ───────────────────────────────────────────────────────────────
 function speakTitle(title,onEnd){
+  if(!locutor_enabled){if(onEnd)onEnd();return;}
   var clean=title.replace(/\(.*?\)/g,'').replace(/\[.*?\]/g,'')
     .replace(/official|video|lyrics|hd|4k|karaoke/gi,'').replace(/\s+/g,' ').trim().substring(0,60);
   document.getElementById('locutor-text').textContent='🎵 '+clean;
@@ -224,7 +226,7 @@ function speakTitle(title,onEnd){
 window.onYouTubeIframeAPIReady=function(){
   ytPlayer=new YT.Player('yt-player',{
     height:'1',width:'1',
-    playerVars:{autoplay:0,controls:0,start:60},
+    playerVars:{autoplay:0,controls:0,start:90},
     events:{
       onReady:function(){
         ytReady=true;
@@ -314,7 +316,7 @@ function playIndex(i){
   document.getElementById('progress-fill').style.width='0%';
   document.getElementById('np-title').textContent=songs[i].title;
   ytPlayer.setVolume(100);
-  ytPlayer.loadVideoById({videoId:songs[i].videoId,startSeconds:60});
+  ytPlayer.loadVideoById({videoId:songs[i].videoId,startSeconds:90});
   renderQueue();
   sbFetch('state?on_conflict=id',{method:'POST',prefer:'resolution=merge-duplicates',
     body:[{id:1,current_index:i,current_title:songs[i].title,school_id:SCHOOL_ID}]}).catch(function(){});
@@ -415,6 +417,9 @@ function renderMessages(){
 var lastCmdId='';
 function applyCommand(st){
   if(!st)return;
+  // Apply options regardless of command
+  if(st.opt_crossfade!==undefined)crossfading_enabled=!!st.opt_crossfade;
+  if(st.opt_locutor!==undefined)locutor_enabled=!!st.opt_locutor;
   var cmd=st.command||'',cmdId=st.command_id||'';
   if(cmdId&&cmdId===lastCmdId)return;
   lastCmdId=cmdId;
