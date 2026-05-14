@@ -240,6 +240,7 @@ window.onYouTubeIframeAPIReady=function(){
       },
       onStateChange:function(e){
         if(e.data===YT.PlayerState.PLAYING){
+          if(!coroJumped){coroJumped=true;ytPlayer.seekTo(60,true);}
           startProgress();
         }
         if(e.data===YT.PlayerState.PAUSED){
@@ -324,9 +325,7 @@ function playIndex(i){
   document.getElementById('progress-fill').style.width='0%';
   document.getElementById('np-title').textContent=songs[i].title;
   ytPlayer.setVolume(100);
-  // Saltar a segundo aleatorio entre 55-80s para evitar mid-rolls fijos
-  var coroSec=55+Math.floor(Math.random()*25);
-  ytPlayer.loadVideoById({videoId:songs[i].videoId,startSeconds:coroSec});
+  ytPlayer.loadVideoById({videoId:songs[i].videoId});
   renderQueue();
   sbFetch('state?on_conflict=id',{method:'POST',prefer:'resolution=merge-duplicates',
     body:[{id:1,current_index:i,current_title:songs[i].title,school_id:SCHOOL_ID}]}).catch(function(){});
