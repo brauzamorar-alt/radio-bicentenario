@@ -71,6 +71,8 @@ header{background:#0d0d14;border-bottom:1px solid transparent;border-image:linea
 .qa-item.playing .qa-num{color:var(--accent);}
 .qa-item.preloaded .qa-num{color:var(--green);}
 .qa-title{flex:1;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.qa-play-btn{background:rgba(0,255,136,.12);border:1px solid var(--green);color:var(--green);border-radius:8px;padding:6px 12px;font-size:.82rem;cursor:pointer;font-weight:700;min-width:36px;text-align:center;box-shadow:0 0 8px rgba(0,255,136,.2);}
+.qa-play-btn:active{background:var(--green);color:#000;}
 .qa-del{background:rgba(230,57,70,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:.78rem;cursor:pointer;font-weight:600;}
 .qa-del:active{background:var(--accent);color:#fff;}
 .qa-vol{display:flex;align-items:center;gap:8px;}
@@ -373,6 +375,7 @@ function startProgress() {
 // Crossfade real: A baja, B sube simultaneamente
 function doCrossfade(nextIdx) {
   if (crossfading || !songs[nextIdx]) return;
+  if (currentIndex === -1) { playAt(nextIdx); return; }
   crossfading = true;
   document.getElementById('xfade-indicator').textContent = 'Mezclando...';
 
@@ -513,6 +516,15 @@ function adminStop() {
 function adminNext() {
   if (crossfading) return;
   doNextSong();
+}
+function playSongNow(idx) {
+  if (idx === currentIndex) {
+    // Si es la misma cancion, toggle play/pause
+    togglePlayPause(); return;
+  }
+  if (crossfading) return;
+  // Crossfade inmediato a la cancion elegida
+  doCrossfade(idx);
 }
 function seekRel(s) {
   var pl = getActive(); try { if (pl) pl.seekTo(Math.max(0, pl.getCurrentTime() + s), true); } catch(e) {}
