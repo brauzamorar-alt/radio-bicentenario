@@ -346,36 +346,46 @@ function renderMessages() {
   el.innerHTML = html;
 }
 
+var lastCmd = '';
+var lastCmdIndex = -1;
+
 function loadAll() {
-  // Cargar songs y state juntos para sincronizar correctamente
   Promise.all([
     sbFetch('songs?select=*&order=created_at&school_id=eq.' + schoolId).catch(function(){return [];}),
     sbFetch('state?select=*&school_id=eq.' + schoolId).catch(function(){return [];})
   ]).then(function(results) {
     var s = results[0], st = results[1];
-    if (Array.isArray(s)) {
-      songs = s;
-      // Sincronizar currentIndex desde state del servidor
-      if (Array.isArray(st) && st[0] && st[0].current_index !== null) {
-        var serverIdx = st[0].current_index;
-        if (serverIdx !== currentIndex) {
-          currentIndex = serverIdx;
-          // Actualizar titulo
-          if (songs[currentIndex]) {
-            document.getElementById('np-title').textContent = songs[currentIndex].title;
-          }
-          // Reproducir si no estaba sonando esto
-          if (ytReady && ytPlayer && songs[currentIndex]) {
-            var curVideo = songs[currentIndex].videoId;
-            playIndex(currentIndex);
+    if (Array.isArray(s)) { songs = s; }
+
+    if (Array.isArray(st) && st[0]) {
+      var state = st[0];
+      var cmd = state.cmd || 'play';
+      var idx = state.current_index;
+
+      // Ejecutar comando solo si cambio
+      var cmdKey = cmd + '_' + idx;
+      if (cmdKey !== lastCmd) {
+        lastCmd = cmdKey;
+        if (cmd === 'stop') {
+          if (ytPlayer && ytReady) { try { ytPlayer.stopVideo(); } catch(e) {} }
+          clearInterval(progressInterval);
+          document.getElementById('progress-fill').style.width = '0%';
+          document.getElementById('np-title').textContent = 'Esperando canciones...';
+          currentIndex = -1;
+        } else if (cmd === 'pause') {
+          if (ytPlayer && ytReady) { try { ytPlayer.pauseVideo(); } catch(e) {} }
+        } else if (cmd === 'play' && idx !== null && idx >= 0 && songs[idx]) {
+          if (idx !== currentIndex) {
+            playIndex(idx);
+          } else if (ytPlayer && ytReady) {
+            try { ytPlayer.playVideo(); } catch(e) {}
           }
         }
-      } else if (songs.length && currentIndex === -1 && ytReady) {
-        playIndex(0);
       }
       renderQueue();
     }
   });
+
   sbFetch('messages?select=*&order=created_at&school_id=eq.' + schoolId).then(function(m) {
     if (Array.isArray(m)) { messages = m; renderMessages(); }
   }).catch(function() {});

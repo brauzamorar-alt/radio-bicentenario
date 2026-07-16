@@ -115,8 +115,7 @@ header{background:#0d0d14;border-bottom:1px solid transparent;border-image:linea
 </style>
 </head>
 <body>
-<div id="yt-player"></div>
-<div id="yt-player-b"></div>
+
 
 <div id="login-screen">
   <div class="login-box">
@@ -146,10 +145,12 @@ header{background:#0d0d14;border-bottom:1px solid transparent;border-image:linea
       <div class="progress-bar" onclick="seekTo(event)"><div class="progress-fill" id="admin-progress"></div></div>
       <div class="time-row"><span id="time-cur">0:00</span><span id="time-dur">0:00</span></div>
       <div class="xfade-indicator" id="xfade-indicator"></div>
-      <div class="ctrl-row" style="grid-template-columns:1fr 1fr 1fr;">
-        <button class="ctrl-btn btn-play" id="btn-playpause" onclick="togglePlayPause()"><span class="ctrl-icon">&#9654;</span><span>Play</span></button>
-        <button class="ctrl-btn btn-stop" onclick="adminStop()"><span class="ctrl-icon">&#9632;</span><span>Stop</span></button>
-        <button class="ctrl-btn btn-next" onclick="adminNext()"><span class="ctrl-icon">&#9197;</span><span>Siguiente</span></button>
+      <div class="ctrl-row">
+        <button class="ctrl-btn btn-rew" onclick="seekRel(-15)"><span class="ctrl-icon">&#8634;</span><span>-15s</span></button>
+        <button class="ctrl-btn btn-play" onclick="adminPlay()"><span class="ctrl-icon">&#9654;</span><span>Play</span></button>
+        <button class="ctrl-btn btn-pause" onclick="adminPause()"><span class="ctrl-icon">&#9646;&#9646;</span><span>Pausa</span></button>
+        <button class="ctrl-btn btn-ffw" onclick="seekRel(15)"><span class="ctrl-icon">&#8635;</span><span>+15s</span></button>
+        <button class="ctrl-btn btn-next" onclick="adminNext()"><span class="ctrl-icon">&#9197;</span><span>Mezclar</span></button>
       </div>
       <div class="vol-row">
         <span class="vol-label">Vol. general</span>
@@ -351,7 +352,7 @@ function fmtTime(s) {
 }
 
 function startProgress() {
-  isPlaying = true; updatePlayPauseBtn();
+  // En el admin solo simulamos progreso visual
   clearInterval(progressInterval);
   progressInterval = setInterval(function() {
     var pl = getActive();
@@ -470,18 +471,15 @@ function playAt(i) {
 
 var isPlaying = false;
 function togglePlayPause() {
-  if (currentIndex === -1 && songs.length > 0) { playAt(0); return; }
-  var pl = getActive();
-  try {
-    if (!pl) return;
-    var state = pl.getPlayerState();
-    if (state === YT.PlayerState.PLAYING) {
-      pl.pauseVideo(); isPlaying = false;
-    } else {
-      pl.playVideo(); isPlaying = true;
-    }
-    updatePlayPauseBtn();
-  } catch(e) {}
+  if (currentIndex === -1 && songs.length > 0) { sendCmd('play', 0); return; }
+  if (isPlaying) {
+    sendCmd('pause', currentIndex);
+    isPlaying = false;
+  } else {
+    sendCmd('play', currentIndex);
+    isPlaying = true;
+  }
+  updatePlayPauseBtn();
 }
 function updatePlayPauseBtn() {
   var btn = document.getElementById('btn-playpause');
@@ -495,34 +493,20 @@ function updatePlayPauseBtn() {
   }
 }
 function adminStop() {
-  var pl = getActive();
-  try { if (pl) pl.stopVideo(); } catch(e) {}
-  var plb = getInactive();
-  try { if (plb) plb.stopVideo(); } catch(e) {}
-  clearInterval(progressInterval);
-  crossfading = false; coroJumped = false;
-  isPlaying = false; currentIndex = -1; preloadedIndex = -1;
+  sendCmd('stop', -1);
+  isPlaying = false; currentIndex = -1;
+  document.getElementById('admin-np-title').textContent = 'Sin reproduccion';
   document.getElementById('admin-progress').style.width = '0%';
   document.getElementById('time-cur').textContent = '0:00';
-  document.getElementById('xfade-indicator').textContent = '';
-  document.getElementById('admin-np-title').textContent = 'Sin reproduccion';
   updatePlayPauseBtn(); renderQueueAdmin();
-  sbFetch('state?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates',
-    body: [{ id: 1, current_index: null, current_title: null, school_id: schoolId }]
-  }).catch(function() {});
 }
 function adminNext() {
-  if (crossfading) return;
-  doNextSong();
+  var next = currentIndex + 1;
+  if (next < songs.length) sendCmd('play', next);
 }
 function playSongNow(idx) {
-  if (idx === currentIndex) {
-    // Si es la misma cancion, toggle play/pause
-    togglePlayPause(); return;
-  }
-  if (crossfading) return;
-  // Crossfade inmediato a la cancion elegida
-  doCrossfade(idx);
+  if (idx === currentIndex) { togglePlayPause(); return; }
+  sendCmd('play', idx);
 }
 function seekRel(s) {
   var pl = getActive(); try { if (pl) pl.seekTo(Math.max(0, pl.getCurrentTime() + s), true); } catch(e) {}
@@ -647,6 +631,20 @@ function renderMsgsAdmin() {
   el.innerHTML = html;
 }
 
+// Enviar comando al index via Supabase
+function sendCmd(cmd, idx) {
+  var title = (idx >= 0 && songs[idx]) ? songs[idx].title : '';
+  currentIndex = idx;
+  isPlaying = cmd === 'play';
+  updatePlayPauseBtn();
+  if (title) document.getElementById('admin-np-title').textContent = title;
+  renderQueueAdmin();
+  sbFetch('state?on_conflict=id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates',
+    body: [{ id: 1, current_index: idx >= 0 ? idx : null, current_title: title || null, cmd: cmd, school_id: schoolId }]
+  }).catch(function() {});
+}
+
 function loadAll() {
   sbFetch('songs?select=*&order=created_at&school_id=eq.' + schoolId).then(function(s) {
     if (Array.isArray(s)) { songs = s; renderQueueAdmin(); }
@@ -659,7 +657,6 @@ function loadAll() {
 function initAdmin() {
   applySchool();
   fxList = JSON.parse(localStorage.getItem('radio_fx_' + schoolId) || '[]');
-  loadYouTubeAPI();
   renderFxList();
   loadAll();
   setInterval(loadAll, 4000);
