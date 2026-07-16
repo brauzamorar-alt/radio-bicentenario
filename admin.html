@@ -55,7 +55,7 @@ header{background:#0d0d14;border-bottom:1px solid transparent;border-image:linea
 .btn-play{background:var(--green);color:#000;box-shadow:0 0 14px var(--green),0 0 28px rgba(0,255,136,.4);}
 .btn-pause{background:var(--accent);color:#fff;box-shadow:0 0 14px var(--accent),0 0 28px rgba(255,0,204,.4);}
 .btn-ffw{background:var(--panel2);border:1px solid var(--border);color:var(--muted);}
-.btn-stop{background:#333;border:1px solid #555;color:#fff;}
+.btn-stop{background:#1a1a2e;border:1px solid #444;color:#aaa;}
 .btn-next{background:var(--accent2);color:#000;box-shadow:0 0 14px var(--accent2),0 0 28px rgba(0,229,255,.4);}
 .xfade-indicator{text-align:center;font-size:.72rem;color:var(--green);margin-bottom:8px;height:16px;}
 .vol-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
@@ -146,8 +146,8 @@ header{background:#0d0d14;border-bottom:1px solid transparent;border-image:linea
       <div class="xfade-indicator" id="xfade-indicator"></div>
       <div class="ctrl-row">
         <button class="ctrl-btn btn-rew" onclick="seekRel(-15)"><span class="ctrl-icon">&#8634;</span><span>-15s</span></button>
-        <button class="ctrl-btn btn-pause" id="btn-playpause" onclick="adminPause()"><span class="ctrl-icon">&#9646;&#9646;</span><span>Pausa</span></button>
-        <button class="ctrl-btn btn-stop" onclick="adminStop()"><span class="ctrl-icon">&#9632;</span><span>Stop</span></button>
+        <button class="ctrl-btn btn-play" onclick="adminPlay()"><span class="ctrl-icon">&#9654;</span><span>Play</span></button>
+        <button class="ctrl-btn btn-pause" onclick="adminPause()"><span class="ctrl-icon">&#9646;&#9646;</span><span>Pausa</span></button>
         <button class="ctrl-btn btn-ffw" onclick="seekRel(15)"><span class="ctrl-icon">&#8635;</span><span>+15s</span></button>
         <button class="ctrl-btn btn-next" onclick="adminNext()"><span class="ctrl-icon">&#9197;</span><span>Mezclar</span></button>
       </div>
@@ -174,11 +174,11 @@ header{background:#0d0d14;border-bottom:1px solid transparent;border-image:linea
     <div class="section-title">Efectos de sonido</div>
     <div class="fx-upload-zone" onclick="document.getElementById('fx-file-input').click()">
       <input type="file" id="fx-file-input" accept="audio/*" multiple onchange="handleFxUpload(event)">
-      <div class="fx-upload-label"><strong>+ Subir archivo de audio</strong>MP3, WAV, OGG</div>
+      <div class="fx-upload-label"><strong>+ Subir archivo MP3/WAV</strong>desde tu dispositivo</div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <input type="text" id="fx-url-input" placeholder="O pega un link de audio (https://...mp3)" style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:#fff;font-family:Inter,sans-serif;font-size:.88rem;outline:none;">
-      <button onclick="addFxFromUrl()" style="background:linear-gradient(135deg,var(--accent),#cc00ff);border:none;border-radius:10px;padding:10px 16px;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px var(--accent);">+ Agregar</button>
+      <input type="url" id="fx-url-input" placeholder="O pega link de audio: https://....mp3" style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:#fff;font-size:.88rem;outline:none;">
+      <button onclick="addFxFromUrl()" style="background:linear-gradient(135deg,var(--accent),#cc00ff);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 0 10px var(--accent);white-space:nowrap;">+ Link</button>
     </div>
     <div id="fx-list"><div class="fx-empty">Sin efectos cargados</div></div>
   </div>
@@ -293,12 +293,7 @@ window.onYouTubeIframeAPIReady = function() {
         if (activePlayer !== 'A') return;
         if (e.data === YT.PlayerState.ENDED) { doNextSong(); }
         if (e.data === YT.PlayerState.PLAYING) {
-          if (!coroJumped) {
-            coroJumped = true;
-            var dur = ytPlayer.getDuration();
-            var skipTo = dur > 0 ? Math.max(60, Math.round(dur * 0.4)) : 60;
-            ytPlayer.seekTo(skipTo, true);
-          }
+          if (!coroJumped) { coroJumped = true; var d=ytPlayer.getDuration(); ytPlayer.seekTo(d>120?Math.round(d*0.40):60,true); }
           startProgress();
           setTimeout(preloadNext, 5000);
         }
@@ -315,12 +310,7 @@ window.onYouTubeIframeAPIReady = function() {
         if (activePlayer !== 'B') return;
         if (e.data === YT.PlayerState.ENDED) { doNextSong(); }
         if (e.data === YT.PlayerState.PLAYING) {
-          if (!coroJumped) {
-            coroJumped = true;
-            var dur = ytPlayerB.getDuration();
-            var skipTo = dur > 0 ? Math.max(60, Math.round(dur * 0.4)) : 60;
-            ytPlayerB.seekTo(skipTo, true);
-          }
+          if (!coroJumped) { coroJumped = true; var d=ytPlayerB.getDuration(); ytPlayerB.seekTo(d>120?Math.round(d*0.40):60,true); }
           startProgress();
           setTimeout(preloadNext, 5000);
         }
@@ -344,7 +334,7 @@ function preloadNext() {
   inactive.setVolume(0);
   inactive.loadVideoById({ videoId: songs[nextIdx].videoId });
   setTimeout(function() {
-    try { inactive.seekTo(60, true); inactive.pauseVideo(); } catch(e) {}
+    try { var d2=inactive.getDuration(); inactive.seekTo(d2>120?Math.round(d2*0.40):60,true); inactive.pauseVideo(); } catch(e) {}
   }, 3000);
   renderQueueAdmin();
 }
@@ -361,6 +351,7 @@ function fmtTime(s) {
 }
 
 function startProgress() {
+  isPlaying = true; updatePlayPauseBtn();
   clearInterval(progressInterval);
   progressInterval = setInterval(function() {
     var pl = getActive();
@@ -476,46 +467,48 @@ function playAt(i) {
   sbFetch('state?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates', body: [{ id: 1, current_index: i, current_title: songs[i].title, school_id: schoolId }] }).catch(function() {});
 }
 
-var isPaused = false;
-function adminPlay() {
+var isPlaying = false;
+function togglePlayPause() {
   if (currentIndex === -1 && songs.length > 0) { playAt(0); return; }
   var pl = getActive();
-  try { if (pl) { pl.playVideo(); isPaused = false; updatePlayBtn(); } } catch(e) {}
-}
-function adminPause() {
-  var pl = getActive();
   try {
-    if (pl) {
-      var state = pl.getPlayerState();
-      if (state === YT.PlayerState.PLAYING) {
-        pl.pauseVideo(); isPaused = true;
-      } else {
-        pl.playVideo(); isPaused = false;
-      }
-      updatePlayBtn();
+    if (!pl) return;
+    var state = pl.getPlayerState();
+    if (state === YT.PlayerState.PLAYING) {
+      pl.pauseVideo(); isPlaying = false;
+    } else {
+      pl.playVideo(); isPlaying = true;
     }
+    updatePlayPauseBtn();
   } catch(e) {}
+}
+function updatePlayPauseBtn() {
+  var btn = document.getElementById('btn-playpause');
+  if (!btn) return;
+  if (isPlaying) {
+    btn.className = 'ctrl-btn btn-pause';
+    btn.innerHTML = '<span class="ctrl-icon">&#9646;&#9646;</span><span>Pausa</span>';
+  } else {
+    btn.className = 'ctrl-btn btn-play';
+    btn.innerHTML = '<span class="ctrl-icon">&#9654;</span><span>Play</span>';
+  }
 }
 function adminStop() {
   var pl = getActive();
   try { if (pl) pl.stopVideo(); } catch(e) {}
+  var plb = getInactive();
+  try { if (plb) plb.stopVideo(); } catch(e) {}
   clearInterval(progressInterval);
+  crossfading = false; coroJumped = false;
+  isPlaying = false; currentIndex = -1; preloadedIndex = -1;
   document.getElementById('admin-progress').style.width = '0%';
   document.getElementById('time-cur').textContent = '0:00';
+  document.getElementById('xfade-indicator').textContent = '';
   document.getElementById('admin-np-title').textContent = 'Sin reproduccion';
-  isPaused = false; currentIndex = -1; preloadedIndex = -1;
-  updatePlayBtn(); renderQueueAdmin();
-}
-function updatePlayBtn() {
-  var btn = document.getElementById('btn-playpause');
-  if (!btn) return;
-  if (isPaused) {
-    btn.innerHTML = '<span class="ctrl-icon">&#9654;</span><span>Play</span>';
-    btn.className = 'ctrl-btn btn-play';
-  } else {
-    btn.innerHTML = '<span class="ctrl-icon">&#9646;&#9646;</span><span>Pausa</span>';
-    btn.className = 'ctrl-btn btn-pause';
-  }
+  updatePlayPauseBtn(); renderQueueAdmin();
+  sbFetch('state?on_conflict=id', { method: 'POST', prefer: 'resolution=merge-duplicates',
+    body: [{ id: 1, current_index: null, current_title: null, school_id: schoolId }]
+  }).catch(function() {});
 }
 function adminNext() {
   if (crossfading) return;
@@ -562,9 +555,8 @@ var fxList = [], currentFxAudio = null, currentFxIdx = -1;
 function saveFx() { localStorage.setItem('radio_fx_' + schoolId, JSON.stringify(fxList)); }
 function addFxFromUrl() {
   var url = document.getElementById('fx-url-input').value.trim();
-  if (!url) return;
-  if (!url.startsWith('http')) { alert('Ingresa una URL valida que empiece con http'); return; }
-  var name = url.split('/').pop().replace(/\.[^.]+$/, '') || 'Efecto';
+  if (!url || !url.startsWith('http')) { alert('Pega una URL valida que empiece con http'); return; }
+  var name = decodeURIComponent(url.split('/').pop().split('?')[0].replace(/\.[^.]+$/, '') || 'Efecto');
   fxList.push({ name: name, url: url, vol: 80 });
   saveFx(); renderFxList();
   document.getElementById('fx-url-input').value = '';
