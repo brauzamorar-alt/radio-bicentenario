@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Admin - Radio Escolar</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--mg:#ff00cc;--cy:#00e5ff;--gn:#00ff88;--bg:#0a0a0f;--bg2:#111118;--bg3:#16161f;--bd:#2a2a3a;--tx:#fff;--mu:#888;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;min-height:100vh;}
+
+/* LOGIN */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:99;}
+.lbox{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:36px 28px;width:100%;max-width:340px;text-align:center;}
+.lbox h2{font-family:'Oswald',sans-serif;font-size:1.6rem;color:var(--mg);text-shadow:0 0 12px var(--mg);margin-bottom:6px;}
+.lbox p{color:var(--mu);font-size:.8rem;margin-bottom:24px;letter-spacing:1px;text-transform:uppercase;}
+.lbox input{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:13px;color:var(--tx);font-size:1rem;margin-bottom:12px;outline:none;text-align:center;}
+.lbox input:focus{border-color:var(--mg);}
+.lbox input[type=password]{letter-spacing:4px;}
+.lbtn{width:100%;background:var(--mg);border:none;border-radius:12px;padding:14px;color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;cursor:pointer;box-shadow:0 0 16px var(--mg);}
+.lerr{color:var(--mg);font-size:.85rem;margin-top:10px;display:none;}
+
+/* MAIN */
+#main{display:none;}
+header{background:var(--bg2);border-bottom:2px solid var(--mg);padding:14px 16px;display:flex;align-items:center;position:sticky;top:0;z-index:50;box-shadow:0 2px 20px rgba(255,0,204,.2);}
+.htxt h1{font-family:'Oswald',sans-serif;font-size:1.1rem;color:#fff;}
+.htxt span{font-size:.65rem;color:var(--cy);letter-spacing:1px;text-transform:uppercase;}
+.hbadge{margin-left:auto;border:1px solid var(--mg);border-radius:20px;padding:6px 14px;font-size:.72rem;color:var(--mg);font-weight:600;}
+
+/* SECTIONS */
+.sec{padding:14px 16px;}
+.stitle{font-family:'Oswald',sans-serif;font-size:.82rem;letter-spacing:2px;text-transform:uppercase;color:var(--cy);margin-bottom:12px;}
+
+/* PLAYER CARD */
+.pcard{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:16px;}
+.plbl{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--mu);margin-bottom:6px;}
+.ptitle{font-family:'Oswald',sans-serif;font-size:1.1rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:12px;min-height:1.4rem;}
+.pbar{height:6px;background:var(--bd);border-radius:6px;margin-bottom:16px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--mg),var(--cy));width:0%;transition:width .5s;border-radius:6px;}
+
+/* BOTONES CONTROL - 3 grandes */
+.cbts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+.cbt{padding:18px 8px;border-radius:14px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:.85rem;font-weight:700;transition:transform .1s;}
+.cbt:active{transform:scale(.94);}
+.cbt .ico{font-size:1.5rem;}
+.bt-play{background:var(--gn);color:#000;box-shadow:0 0 16px var(--gn);}
+.bt-pause{background:var(--mg);color:#fff;box-shadow:0 0 16px var(--mg);}
+.bt-stop{background:var(--bg3);border:1px solid #444;color:#aaa;}
+.bt-next{background:var(--cy);color:#000;box-shadow:0 0 16px var(--cy);}
+
+/* VOL */
+.vrow{display:flex;align-items:center;gap:10px;}
+.vrow span{font-size:.78rem;color:var(--mu);white-space:nowrap;}
+.vrow input{flex:1;accent-color:var(--mg);}
+.vval{color:#fff!important;font-weight:600;min-width:40px;text-align:right;}
+
+/* COLA */
+#qlist{display:flex;flex-direction:column;gap:8px;}
+.qi{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:12px;}
+.qi.active{border-color:var(--mg);background:rgba(255,0,204,.07);box-shadow:0 0 14px rgba(255,0,204,.15);}
+.qitop{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.qnum{font-family:'Oswald',sans-serif;font-size:.85rem;color:var(--mu);min-width:24px;}
+.qi.active .qnum{color:var(--mg);}
+.qtitle{flex:1;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* BOTON PLAY POR CANCION - verde visible */
+.qplay{background:var(--gn);border:none;border-radius:8px;padding:9px 16px;font-size:1rem;font-weight:700;color:#000;cursor:pointer;min-width:44px;box-shadow:0 0 10px var(--gn);}
+.qplay:active{opacity:.7;}
+.qi.active .qplay{background:var(--mg);color:#fff;box-shadow:0 0 10px var(--mg);}
+.qdel{background:transparent;border:1px solid var(--mg);border-radius:8px;padding:9px 12px;font-size:.85rem;color:var(--mg);cursor:pointer;}
+.qdel:active{background:var(--mg);color:#fff;}
+.qvol{display:flex;align-items:center;gap:8px;}
+.qvol .ql{font-size:.72rem;color:var(--mu);}
+.qvol input{flex:1;accent-color:var(--cy);}
+.qvol .qv{font-size:.72rem;color:#fff;min-width:32px;text-align:right;}
+.qempty{color:var(--mu);text-align:center;padding:24px;font-size:.9rem;}
+
+/* MENSAJES */
+#mlist{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+.mi{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;}
+.mitext{flex:1;font-size:.9rem;line-height:1.4;}
+.mitime{font-size:.7rem;color:var(--mu);margin-top:2px;}
+.midel{background:transparent;border:1px solid var(--mg);border-radius:6px;padding:5px 10px;font-size:.78rem;color:var(--mg);cursor:pointer;flex-shrink:0;}
+.midel:active{background:var(--mg);color:#fff;}
+.delall{width:100%;background:transparent;border:1px solid var(--mg);border-radius:10px;padding:10px;font-size:.85rem;color:var(--mg);cursor:pointer;margin-bottom:10px;font-weight:600;}
+.delall:active{background:var(--mg);color:#fff;}
+
+/* EFECTOS */
+.fxup{background:var(--bg3);border:2px dashed var(--bd);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-bottom:10px;}
+.fxup input{display:none;}
+.fxup strong{display:block;color:#fff;margin-bottom:4px;}
+.fxup span{font-size:.85rem;color:var(--mu);}
+.fxurl{display:flex;gap:8px;margin-bottom:12px;}
+.fxurl input{flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;color:#fff;font-size:.9rem;outline:none;}
+.fxurl input:focus{border-color:var(--mg);}
+.fxurlbtn{background:var(--mg);border:none;border-radius:10px;padding:10px 16px;color:#fff;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 0 10px var(--mg);}
+#fxlist{display:flex;flex-direction:column;gap:8px;}
+.fxi{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:12px;}
+.fxtop{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.fxname{flex:1;}
+.fxname input{background:transparent;border:none;border-bottom:1px solid var(--bd);color:#fff;font-size:.9rem;width:100%;outline:none;font-family:'Inter',sans-serif;padding-bottom:2px;}
+.fxplay{background:var(--cy);border:none;border-radius:8px;padding:8px 14px;color:#000;font-weight:700;cursor:pointer;min-width:64px;text-align:center;font-size:.85rem;}
+.fxplay.on{background:var(--mg);color:#fff;}
+.fxdel{background:transparent;border:1px solid var(--mg);border-radius:8px;padding:8px 12px;color:var(--mg);cursor:pointer;font-size:.85rem;}
+.fxvol{display:flex;align-items:center;gap:8px;}
+.fxvol .fl{font-size:.72rem;color:var(--mu);}
+.fxvol input{flex:1;accent-color:var(--cy);}
+.fxvol .fv{font-size:.72rem;color:#fff;min-width:32px;text-align:right;}
+.fxempty{color:var(--mu);text-align:center;padding:16px;font-size:.9rem;}
+
+/* CONFIG */
+.cfcard{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.cflbl{font-size:.75rem;color:var(--mu);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:4px;}
+.cfinput{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;color:#fff;font-size:.9rem;outline:none;font-family:'Inter',sans-serif;}
+.cfinput:focus{border-color:var(--cy);}
+.cfsave{width:100%;background:var(--cy);border:none;border-radius:10px;padding:12px;color:#000;font-weight:700;font-size:.95rem;cursor:pointer;box-shadow:0 0 10px var(--cy);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lbox">
+    <h2>Panel Admin</h2>
+    <p>Radio Escolar</p>
+    <input type="text" id="sid" placeholder="ID colegio (ej: bicentenario)">
+    <input type="password" id="spwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
+    <button class="lbtn" onclick="login()">INGRESAR</button>
+    <div class="lerr" id="lerr">ID o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <header>
+    <div class="htxt">
+      <h1 id="hname">Radio Escolar</h1>
+      <span id="hcity"></span>
+    </div>
+    <div class="hbadge">DJ ADMIN</div>
+  </header>
+
+  <!-- PLAYER -->
+  <div class="sec">
+    <div class="stitle">Reproduccion en tablet</div>
+    <div class="pcard">
+      <div class="plbl">Sonando ahora</div>
+      <div class="ptitle" id="ptitle">Sin reproduccion</div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+      <div class="cbts">
+        <button class="cbt bt-play" id="btnpp" onclick="cmdPlayPause()">
+          <span class="ico">&#9654;</span><span>Play</span>
+        </button>
+        <button class="cbt bt-stop" onclick="cmdStop()">
+          <span class="ico">&#9632;</span><span>Stop</span>
+        </button>
+        <button class="cbt bt-next" onclick="cmdNext()">
+          <span class="ico">&#9197;</span><span>Siguiente</span>
+        </button>
+      </div>
+      <div class="vrow">
+        <span>Volumen</span>
+        <input type="range" min="0" max="100" value="100" id="mvol" oninput="sendVol(this.value)">
+        <span class="vval" id="mvolv">100%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLA -->
+  <div class="sec">
+    <div class="stitle">Cola de canciones</div>
+    <div id="qlist"><div class="qempty">Sin canciones</div></div>
+  </div>
+
+  <!-- MENSAJES -->
+  <div class="sec">
+    <div class="stitle">Mensajes</div>
+    <button class="delall" onclick="delAllMsgs()">Eliminar todos los mensajes</button>
+    <div id="mlist"><div class="qempty">Sin mensajes</div></div>
+  </div>
+
+  <!-- EFECTOS -->
+  <div class="sec">
+    <div class="stitle">Efectos de sonido</div>
+    <div class="fxup" onclick="document.getElementById('fxfile').click()">
+      <input type="file" id="fxfile" accept="audio/*" multiple onchange="fxUpload(event)">
+      <strong>+ Subir MP3 / WAV</strong>
+      <span>desde tu dispositivo</span>
+    </div>
+    <div class="fxurl">
+      <input type="url" id="fxurlin" placeholder="O pega link: https://...mp3">
+      <button class="fxurlbtn" onclick="fxFromUrl()">+ Link</button>
+    </div>
+    <div id="fxlist"><div class="fxempty">Sin efectos cargados</div></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="sec">
+    <div class="stitle">Configuracion</div>
+    <div class="cfcard">
+      <div>
+        <label class="cflbl">Nombre del establecimiento</label>
+        <input type="text" class="cfinput" id="cfname">
+      </div>
+      <div>
+        <label class="cflbl">Ciudad</label>
+        <input type="text" class="cfinput" id="cfcity">
+      </div>
+      <div>
+        <label class="cflbl">Color principal</label>
+        <input type="color" class="cfinput" id="cfcolor" value="#ff00cc" style="height:44px;padding:4px;">
+      </div>
+      <button class="cfsave" onclick="saveConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+var SB = 'https://ohrjuewpnhuefxqailye.supabase.co';
+var KEY = 'sb_publishable_hZxknQzUmTFJsOr88ndSkw_bE8L8GFu';
+var SCHOOLS = {
+  'bicentenario': { name:'Liceo Bicentenario Maritimo', city:'Valparaiso', color:'#ff00cc', pwd:'BrauEFI2004' }
+};
+
+var schoolId = '', songs = [], msgs = [], curIdx = -1, playing = false;
+var fxList = [], fxAudio = null, fxIdx = -1;
+var progressTimer = null;
+
+// ── SUPABASE ──
+function db(path, opts) {
+  var h = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+  if (opts && opts.prefer) h['Prefer'] = opts.prefer;
+  return fetch(SB + '/rest/v1/' + path, {
+    method: opts && opts.method ? opts.method : 'GET',
+    headers: h,
+    body: opts && opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(function(r) { return r.json(); }).catch(function() { return null; });
+}
+
+// ── AUTH ──
+function login() {
+  var sid = document.getElementById('sid').value.trim().toLowerCase();
+  var pwd = document.getElementById('spwd').value;
+  if (!SCHOOLS[sid] || SCHOOLS[sid].pwd !== pwd) {
+    var e = document.getElementById('lerr');
+    e.style.display = 'block';
+    setTimeout(function(){ e.style.display='none'; }, 3000);
+    document.getElementById('spwd').value = '';
+    return;
+  }
+  schoolId = sid;
+  sessionStorage.setItem('ra_school', sid);
+  sessionStorage.setItem('ra_ok', '1');
+  showMain();
+}
+
+function showMain() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  var s = SCHOOLS[schoolId];
+  document.getElementById('hname').textContent = s.name;
+  document.getElementById('hcity').textContent = s.city;
+  document.getElementById('cfname').value = s.name;
+  document.getElementById('cfcity').value = s.city;
+  document.getElementById('cfcolor').value = s.color;
+  document.documentElement.style.setProperty('--mg', s.color);
+  fxList = JSON.parse(localStorage.getItem('fx_' + schoolId) || '[]');
+  renderFx();
+  loadAll();
+  setInterval(loadAll, 4000);
+  // Actualizar progreso visual cada segundo
+  progressTimer = setInterval(updateProgress, 1000);
+}
+
+// Restaurar sesion
+var rs = sessionStorage.getItem('ra_school');
+if (sessionStorage.getItem('ra_ok') === '1' && rs && SCHOOLS[rs]) {
+  schoolId = rs;
+  window.addEventListener('DOMContentLoaded', showMain);
+}
+
+// ── COMANDOS → Supabase (el index los ejecuta) ──
+function sendState(cmd, idx) {
+  curIdx = idx;
+  playing = (cmd === 'play');
+  var title = (idx >= 0 && songs[idx]) ? songs[idx].title : '';
+  document.getElementById('ptitle').textContent = title || 'Sin reproduccion';
+  updateBtn();
+  renderQueue();
+  db('state?on_conflict=id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates',
+    body: [{ id:1, cmd:cmd, current_index: idx >= 0 ? idx : null, current_title: title || null, school_id: schoolId }]
+  });
+}
+
+function sendVol(v) {
+  document.getElementById('mvolv').textContent = v + '%';
+  db('state?on_conflict=id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates',
+    body: [{ id:1, cmd: playing ? 'play' : 'pause', current_index: curIdx >= 0 ? curIdx : null, vol: parseInt(v), school_id: schoolId }]
+  });
+}
+
+function cmdPlayPause() {
+  if (curIdx === -1 && songs.length > 0) { sendState('play', 0); return; }
+  if (playing) sendState('pause', curIdx);
+  else sendState('play', curIdx);
+}
+
+function cmdStop() {
+  sendState('stop', -1);
+  document.getElementById('pfill').style.width = '0%';
+}
+
+function cmdNext() {
+  var n = curIdx + 1;
+  if (n < songs.length) sendState('play', n);
+}
+
+function cmdSong(idx) {
+  if (idx === curIdx && playing) sendState('pause', idx);
+  else sendState('play', idx);
+}
+
+function updateBtn() {
+  var b = document.getElementById('btnpp');
+  if (playing) {
+    b.className = 'cbt bt-pause';
+    b.innerHTML = '<span class="ico">&#9646;&#9646;</span><span>Pausa</span>';
+  } else {
+    b.className = 'cbt bt-play';
+    b.innerHTML = '<span class="ico">&#9654;</span><span>Play</span>';
+  }
+}
+
+function updateProgress() {
+  // Simulacion visual de progreso (el real viene del index)
+  var fill = document.getElementById('pfill');
+  var cur = parseFloat(fill.style.width) || 0;
+  if (playing && cur < 99) fill.style.width = (cur + 0.05) + '%';
+}
+
+// ── LOAD ──
+function loadAll() {
+  db('songs?select=*&order=created_at&school_id=eq.' + schoolId).then(function(s) {
+    if (Array.isArray(s)) { songs = s; renderQueue(); }
+  });
+  db('messages?select=*&order=created_at&school_id=eq.' + schoolId).then(function(m) {
+    if (Array.isArray(m)) { msgs = m; renderMsgs(); }
+  });
+  // Sincronizar estado actual del index
+  db('state?select=*&school_id=eq.' + schoolId).then(function(st) {
+    if (Array.isArray(st) && st[0]) {
+      var s = st[0];
+      if (s.current_index !== null && s.current_index !== curIdx) {
+        curIdx = s.current_index;
+        playing = (s.cmd === 'play');
+        var title = songs[curIdx] ? songs[curIdx].title : '';
+        if (title) document.getElementById('ptitle').textContent = title;
+        updateBtn(); renderQueue();
+      }
+    }
+  });
+}
+
+// ── RENDER COLA ──
+function renderQueue() {
+  var el = document.getElementById('qlist');
+  if (!songs.length) { el.innerHTML = '<div class="qempty">Sin canciones en la cola</div>'; return; }
+  var h = '';
+  for (var i = 0; i < songs.length; i++) {
+    var s = songs[i], act = i === curIdx;
+    var playIcon = (act && playing) ? '&#9646;&#9646;' : '&#9654;';
+    h += '<div class="qi' + (act ? ' active' : '') + '">';
+    h += '<div class="qitop">';
+    h += '<div class="qnum">' + (act ? (playing ? '&#9654;' : '&#9646;&#9646;') : (i+1)) + '</div>';
+    h += '<div class="qtitle">' + s.title + '</div>';
+    h += '<button class="qplay" onclick="cmdSong(' + i + ')">' + playIcon + '</button>';
+    h += '<button class="qdel" onclick="delSong(\'' + s.id + '\',' + i + ')">X</button>';
+    h += '</div>';
+    var vol = 100;
+    h += '<div class="qvol"><span class="ql">Vol</span><input type="range" min="0" max="100" value="' + vol + '" oninput="this.nextElementSibling.textContent=this.value+\'%\'"><span class="qv">' + vol + '%</span></div>';
+    h += '</div>';
+  }
+  el.innerHTML = h;
+}
+
+// ── RENDER MENSAJES ──
+function renderMsgs() {
+  var el = document.getElementById('mlist');
+  if (!msgs.length) { el.innerHTML = '<div class="qempty">Sin mensajes</div>'; return; }
+  var h = '', list = msgs.slice().reverse();
+  for (var i = 0; i < list.length; i++) {
+    var m = list[i], t = m.created_at ? new Date(m.created_at).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : '';
+    h += '<div class="mi"><div><div class="mitext">' + m.text + '</div><div class="mitime">' + t + '</div></div>';
+    h += '<button class="midel" onclick="delMsg(\'' + m.id + '\')">X</button></div>';
+  }
+  el.innerHTML = h;
+}
+
+function delSong(id, idx) {
+  if (!confirm('Eliminar esta cancion?')) return;
+  if (idx === curIdx) cmdStop();
+  db('songs?id=eq.' + id, { method:'DELETE' }).then(loadAll);
+}
+function delMsg(id) { db('messages?id=eq.' + id, { method:'DELETE' }).then(loadAll); }
+function delAllMsgs() {
+  if (!confirm('Eliminar todos los mensajes?')) return;
+  db('messages?created_at=gte.1970-01-01&school_id=eq.' + schoolId, { method:'DELETE' }).then(loadAll);
+}
+
+// ── EFECTOS ──
+function saveFx() { localStorage.setItem('fx_' + schoolId, JSON.stringify(fxList)); }
+function fxFromUrl() {
+  var url = document.getElementById('fxurlin').value.trim();
+  if (!url.startsWith('http')) { alert('URL invalida'); return; }
+  var name = decodeURIComponent(url.split('/').pop().split('?')[0].replace(/\.[^.]+$/,'') || 'Efecto');
+  fxList.push({ name:name, url:url, vol:80 });
+  saveFx(); renderFx();
+  document.getElementById('fxurlin').value = '';
+}
+function fxUpload(e) {
+  Array.from(e.target.files).forEach(function(f) {
+    var r = new FileReader();
+    r.onload = function(ev) {
+      fxList.push({ name:f.name.replace(/\.[^.]+$/,''), data:ev.target.result, vol:80 });
+      saveFx(); renderFx();
+    };
+    r.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+function fxToggle(i) {
+  if (fxAudio && fxIdx === i) { fxAudio.pause(); fxAudio=null; fxIdx=-1; renderFx(); return; }
+  if (fxAudio) fxAudio.pause();
+  var fx = fxList[i];
+  fxAudio = new Audio(fx.url || fx.data);
+  fxAudio.volume = (fx.vol||80)/100;
+  fxIdx = i;
+  fxAudio.play().catch(function(){ alert('Error al reproducir'); });
+  fxAudio.onended = function(){ fxAudio=null; fxIdx=-1; renderFx(); };
+  renderFx();
+}
+function fxSetVol(i, v, el) { fxList[i].vol=parseInt(v); saveFx(); if(el) el.textContent=v+'%'; if(fxAudio&&fxIdx===i) fxAudio.volume=v/100; }
+function fxRename(i, v) { fxList[i].name=v; saveFx(); }
+function fxDel(i) {
+  if (fxIdx===i && fxAudio) { fxAudio.pause(); fxAudio=null; fxIdx=-1; }
+  fxList.splice(i,1); saveFx(); renderFx();
+}
+function renderFx() {
+  var el = document.getElementById('fxlist');
+  if (!fxList.length) { el.innerHTML = '<div class="fxempty">Sin efectos. Sube MP3 o pega link.</div>'; return; }
+  var h = '';
+  for (var i = 0; i < fxList.length; i++) {
+    var fx = fxList[i], on = i===fxIdx, v = fx.vol||80;
+    h += '<div class="fxi"><div class="fxtop">';
+    h += '<div class="fxname"><input type="text" value="' + fx.name.replace(/"/g,'&quot;') + '" onchange="fxRename(' + i + ',this.value)"></div>';
+    h += '<button class="fxplay' + (on?' on':'') + '" onclick="fxToggle(' + i + ')">' + (on?'Stop':'Play') + '</button>';
+    h += '<button class="fxdel" onclick="fxDel(' + i + ')">X</button></div>';
+    h += '<div class="fxvol"><span class="fl">Vol</span><input type="range" min="0" max="100" value="' + v + '" oninput="fxSetVol(' + i + ',this.value,this.nextElementSibling)"><span class="fv">' + v + '%</span></div>';
+    h += '</div>';
+  }
+  el.innerHTML = h;
+}
+
+// ── CONFIG ──
+function saveConfig() {
+  SCHOOLS[schoolId].name = document.getElementById('cfname').value.trim();
+  SCHOOLS[schoolId].city = document.getElementById('cfcity').value.trim();
+  SCHOOLS[schoolId].color = document.getElementById('cfcolor').value;
+  document.getElementById('hname').textContent = SCHOOLS[schoolId].name;
+  document.getElementById('hcity').textContent = SCHOOLS[schoolId].city;
+  document.documentElement.style.setProperty('--mg', SCHOOLS[schoolId].color);
+  alert('Guardado');
+}
+</script>
+</body>
+</html>
